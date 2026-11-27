@@ -51,7 +51,7 @@ Level Meterは64列×31段のパネルと下段の波形を9:16でも読める�
 
 ### 再現方法
 
-プロジェクトのルートで `node scripts/check-templates.mjs` を実行すると、縦・横・正方形の180フレームを描画する。`--write` はライブラリのWebPを更新する。`--audit /tmp/catalog-frames` は全480フレームおよび読戻し結果のJSONを保存し、共通時刻の入力差と同じ音源の時間差を検査する。`--source /path/to/previous-checkout` を指定すると、そのチェックアウトのシーンモデル・レシピ・レンダラーを同じ音入力で比較できる。旧チェックアウトからもThree.jsなどの依存を解決できるようにする。現行のカタログに `--palettes` を付けると同じ音・時刻で全60件の四配色（240フレーム）を実際に描画して比較する。ChromiumとWebGL 2が必要。
+プロジェクトのルートで `node scripts/check-templates.mjs` を実行すると、縦・横・正方形の180フレームを描画する。`--write` はライブラリのWebPを更新する。`--audit /tmp/catalog-frames` は全480フレームおよび読戻し結果のJSONを保存し、共通時刻の入力差と同じ音源の時間差を検査する。`--source /path/to/previous-checkout` を指定すると、そのチェックアウトのシーンモデル・レシピ・レンダラーを同じ音入力で比較できる。旧チェックアウトからもThree.jsなどの依存を解決できるようにする。特定の作品の再確認には `--only level-meter,inverted-display` のようにIDを指定する。現行のカタログに `--palettes` を付けると同じ音・時刻で全60件の四配色（240フレーム）を実際に描画して比較する。ChromiumとWebGL 2が必要。
 
 ## Minimal · ミニマル
 

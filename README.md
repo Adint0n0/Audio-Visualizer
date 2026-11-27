@@ -6,7 +6,7 @@ Formant Studio は、ローカルの楽曲や動画に立体的なオーディ�
 
 ![Formant Studio の編集画面。左にライブラリ、中央に3Dプレビュー、右にプロパティ、下に楽曲の波形](docs/review/touch/after/1440x900.jpg)
 
-[改修前後の画面比較](docs/TOUCH-REVIEW.md) · [モバイル編集・ジェスチャー・スナップ](docs/TOUCH-EDITING.md) · [改修前調査](docs/REDESIGN-RESEARCH.md)
+[4シーンの短尺デモ](docs/touch-studio-demo.mp4) · [改修前後の画面比較](docs/TOUCH-REVIEW.md) · [モバイル編集・ジェスチャー・スナップ](docs/TOUCH-EDITING.md) · [改修前調査](docs/REDESIGN-RESEARCH.md)
 
 ## 開発
 

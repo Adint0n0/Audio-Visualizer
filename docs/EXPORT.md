@@ -35,6 +35,7 @@ The script builds an isolated test entry, opens a local browser context and exec
 | Synthetic clicks against white video frames at 0.15, 0.65 and 1.15 s | Maximum absolute timing error measured at the click peak was 6.87 ms for WebM and 9.88 ms for MP4, within one 50 ms frame. |
 | Decode-free whole-track remux of each generated track | SHA-256 compared equal for every audio packet. |
 | Production editor offline, Prism Current with Phase Drift WAV from 2.00–2.25 s | VP9/Opus WebM at 3840×2160, ffprobe counted 15 frames at 60/1 fps and reported 0.260 s including padding. FFmpeg decoded the rendered image. Codec trial, export and independent verification took 63.883 s combined on SwiftShader. |
+| Production editor offline, updated Binary Stars default with Phase Drift WAV from 2.00–2.25 s | VP9/Opus WebM at 3840×2160, 15 frames at 60/1 fps and 0.260 s including padding. The complete trial, render and decoded-image check took 34.275 s under SwiftShader. See the [four-scene output and preview measurements](TOUCH-EXPORT-REVIEW.md). |
 | WebM VP9/Opus, 3840×2160 at 60 fps | 15 frames of a 0.25 s test pattern decoded. |
 | WebM VP9/Opus, 1920×1080 at 24 fps | 1,440 frames of a 60 s test pattern decoded. |
 | MP4 H.264/AAC, 1920×1080 at 1 fps | 1,800 frames, 1,799.5 s. Audio retained by packet copy. At t = 1, 900 and 1,798 s, the measured audio peak was 8.44 ms after the white frame at each point. |

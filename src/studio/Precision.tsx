@@ -72,14 +72,20 @@ export function Precision({
         ))}
       </div>
       <div className="precision-space">
-        <label>
-          {t('Adjustment axes', '調整軸')}{' '}
-          <select value={space} onChange={(e) => setSpace(e.target.value as typeof space)}>
-            <option value="local">{t('Local', 'ローカル')}</option>
-            <option value="world">{t('World', 'ワールド')}</option>
-          </select>
-        </label>
-        <span>{t('Fields use parent coordinates', '数値欄は親座標')}</span>
+        {(field === 'position' || field === 'rotation') && (
+          <label>
+            {t('Adjustment axes', '調整軸')}{' '}
+            <select value={space} onChange={(e) => setSpace(e.target.value as typeof space)}>
+              <option value="local">{t('Local', 'ローカル')}</option>
+              <option value="world">{t('World', 'ワールド')}</option>
+            </select>
+          </label>
+        )}
+        <span>
+          {field === 'scale' || field === 'pivot'
+            ? t('Layer-local axes', 'レイヤーのローカル軸')
+            : t('Fields use parent coordinates', '数値欄は親座標')}
+        </span>
       </div>
       {layer[field].map((value, i) => (
         <div className="precision-row" key={field + i}>

@@ -9,7 +9,10 @@ import { tmpdir } from 'node:os'
 import { chromium } from '@playwright/test'
 import { servePages } from './serve-pages.mjs'
 
-const destination = resolve(process.argv[2] || 'docs/touch-studio-demo.mp4')
+const measureOnly = process.argv.includes('--measure')
+const destination = resolve(
+  process.argv.slice(2).find((arg) => !arg.startsWith('--')) || 'docs/touch-studio-demo.mp4',
+)
 const seconds = 2,
   fps = 30,
   width = 1280,
@@ -128,6 +131,7 @@ try {
     )
     await clickButton(page, 'Play')
     await page.waitForFunction(() => !document.querySelector('video').paused)
+    if (measureOnly) await page.waitForTimeout(1800)
     await page.evaluate(() => {
       window.sceneSubmissions = []
     })
@@ -147,6 +151,21 @@ try {
       .locator('.stage-frame canvas')
       .first()
       .evaluate((el) => [el.width, el.height])
+    const previewStats = {
+      name,
+      preview: dims,
+      framesSampled: submissions.length,
+      previewFps: Number(((1000 * frameTimes.length) / frameTimes.reduce((a, b) => a + b, 0)).toFixed(2)),
+      p95FrameMs: Number(pct(frameTimes, 0.95).toFixed(1)),
+      medianDrawCalls: pct(
+        submissions.map((x) => x.calls),
+        0.5,
+      ),
+    }
+    if (measureOnly) {
+      console.log('PREVIEW', JSON.stringify(previewStats))
+      continue
+    }
     const file = join(work, index + '.mp4')
     const start = 2 + index * seconds
     const renderMs = await captureClip(page, file, start, seconds)
@@ -198,15 +217,7 @@ try {
       lit = Number(((100 * visible) / bytes.length).toFixed(1))
     assert.ok(lit > 0.2 && delta > 0.1, 'Scene is blank or static: ' + name)
     measurement.push({
-      name,
-      preview: dims,
-      framesSampled: submissions.length,
-      previewFps: Number(((1000 * frameTimes.length) / frameTimes.reduce((a, b) => a + b, 0)).toFixed(2)),
-      p95FrameMs: Number(pct(frameTimes, 0.95).toFixed(1)),
-      medianDrawCalls: pct(
-        submissions.map((x) => x.calls),
-        0.5,
-      ),
+      ...previewStats,
       renderMs,
       rgbDelta: delta,
       litRgbPercent: lit,
@@ -256,60 +267,84 @@ try {
       )
     }
   }
-  const list = join(work, 'clips.txt')
-  await writeFile(list, scenes.map((_, i) => `file 'visual-${i}.mp4'\nduration ${seconds}\n`).join(''))
-  // Concatenate encoded editor video without another visual compression pass. Encode the
-  // contiguous original music region once to avoid four separate AAC priming boundaries.
-  await mkdir(dirname(destination), { recursive: true })
-  execFileSync('ffmpeg', [
-    '-y',
-    '-v',
-    'error',
-    '-f',
-    'concat',
-    '-safe',
-    '1',
-    '-i',
-    list,
-    '-ss',
-    '2',
-    '-i',
-    'public/demo/phase-drift.wav',
-    '-map',
-    '0:v:0',
-    '-map',
-    '1:a:0',
-    '-t',
-    String(scenes.length * seconds),
-    '-c:v',
-    'copy',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '256k',
-    '-movflags',
-    '+faststart',
-    destination,
-  ])
-  const probe = ffprobe(destination),
-    v = probe.streams.find((s) => s.codec_type === 'video'),
-    a = probe.streams.find((s) => s.codec_type === 'audio')
-  assert.ok(a && a.codec_name === 'aac')
-  assert.equal(Number(v.nb_read_frames), scenes.length * seconds * fps)
-  assert.ok(Math.abs(Number(probe.format.duration) - scenes.length * seconds) < 0.06)
-  assert.ok(Math.abs(Number(v.start_time)) < 0.001)
+  if (!measureOnly) {
+    const list = join(work, 'clips.txt')
+    await writeFile(list, scenes.map((_, i) => `file 'visual-${i}.mp4'\nduration ${seconds}\n`).join(''))
+    // Concatenate encoded editor video without another visual compression pass. Encode the
+    // contiguous original music region once to avoid four separate AAC priming boundaries.
+    await mkdir(dirname(destination), { recursive: true })
+    execFileSync('ffmpeg', [
+      '-y',
+      '-v',
+      'error',
+      '-f',
+      'concat',
+      '-safe',
+      '1',
+      '-i',
+      list,
+      '-ss',
+      '2',
+      '-i',
+      'public/demo/phase-drift.wav',
+      '-map',
+      '0:v:0',
+      '-map',
+      '1:a:0',
+      '-t',
+      String(scenes.length * seconds),
+      '-c:v',
+      'copy',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '256k',
+      '-movflags',
+      '+faststart',
+      destination,
+    ])
+    const probe = ffprobe(destination),
+      v = probe.streams.find((s) => s.codec_type === 'video'),
+      a = probe.streams.find((s) => s.codec_type === 'audio')
+    assert.ok(a && a.codec_name === 'aac')
+    assert.equal(Number(v.nb_read_frames), scenes.length * seconds * fps)
+    assert.ok(Math.abs(Number(probe.format.duration) - scenes.length * seconds) < 0.06)
+    assert.ok(Math.abs(Number(v.start_time)) < 0.001)
+    assert.ok(Math.abs(Number(a.start_time)) < 0.001)
+    const { frames } = JSON.parse(
+      execFileSync(
+        'ffprobe',
+        [
+          '-v',
+          'error',
+          '-select_streams',
+          'v:0',
+          '-show_entries',
+          'frame=best_effort_timestamp_time',
+          '-of',
+          'json',
+          destination,
+        ],
+        { encoding: 'utf8' },
+      ),
+    )
+    assert.equal(frames.length, scenes.length * seconds * fps)
+    for (const [index, frame] of frames.entries()) {
+      assert.ok(Math.abs(Number(frame.best_effort_timestamp_time) - index / fps) < 0.001)
+    }
+    console.log(
+      'Chromium',
+      browser.version(),
+      '1440×960 SwiftShader preview. Output:',
+      destination,
+      probe.format.size,
+      'bytes',
+      probe.format.duration,
+      's',
+    )
+  }
   assert.deepEqual(errors, [])
   assert.deepEqual(violations, [])
-  console.log(
-    'Chromium',
-    browser.version(),
-    '1440×960 SwiftShader preview. Output:',
-    destination,
-    probe.format.size,
-    'bytes',
-    probe.format.duration,
-    's',
-  )
 } catch (error) {
   if (page)
     console.error(

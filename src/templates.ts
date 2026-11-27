@@ -70,7 +70,6 @@ const ice = ['#48e7d1', '#99d6ff', '#c0b5ff'],
   rose = ['#7e69fd', '#e989c0', '#ffd1b2'],
   moss = ['#389b87', '#95d89f', '#eff9b2'],
   chalk = ['#848eac', '#e3e9f0']
-type LayerEffects = Project['effects']
 type LayerDesign = {
   name?: string
   style?: Style
@@ -85,7 +84,6 @@ type LayerDesign = {
   material?: Partial<Material>
   motions?: Motion[]
   modulations?: Modulation[]
-  effects?: LayerEffects
   pulse?: 'radius' | 'emission' | 'height'
 }
 type Stage = {
@@ -152,7 +150,6 @@ function buildLayer(design: LayerDesign, i: number, colorway: Colorway) {
     palette: colors = ice,
     motions = [],
     modulations = [],
-    effects,
     pulse,
     ...fields
   } = design
@@ -162,7 +159,6 @@ function buildLayer(design: LayerDesign, i: number, colorway: Colorway) {
     name: design.name ?? [design.style ?? 'Spectrum', design.layout].filter(Boolean).join(' · '),
     motions: structuredClone(motions),
     modulations: structuredClone(modulations),
-    effects: { ...l.effects, ...effects },
   })
   Object.assign(l.settings, settings)
   Object.assign(

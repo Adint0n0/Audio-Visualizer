@@ -83,7 +83,10 @@ try {
   })
   await page.goto(server.resolvedUrls.local[0] + 'tests/templates.html')
   await page.waitForFunction(() => window.ids?.length === 60)
-  const ids = await page.evaluate(() => window.ids)
+  const allIds = await page.evaluate(() => window.ids)
+  const only = process.argv.indexOf('--only')
+  const ids = only < 0 ? allIds : [...new Set((process.argv[only + 1] ?? '').split(','))]
+  for (const id of ids) assert.ok(allIds.includes(id), 'Unknown template ' + id)
   if (write) await mkdir('public/templates', { recursive: true })
   let count = 0
   const log = []

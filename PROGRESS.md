@@ -52,3 +52,9 @@ PR 作成時に、クラウド環境の許可リストにない `api.github.com/
 画面やジェスチャーの再現には `npm run build` と `node scripts/check-touch.mjs` を実行する。音による画素変化と GPU 形状の再現性は `node scripts/check-music-response.mjs` と `node scripts/check-instruments.mjs` で確認できる。通しの検査は `npm run test:e2e` を使用する。
 
 Android 11 の実機、iOS Safari、実端末のソフトウェアキーボード表示と実端末での振動、人を対象とした評価は未検証。ソフトウェア GPU の測定は負荷傾向の確認に用いた。公開 Pages URL は環境のネットワーク制限で直接接続できないため、同じヘッダーのローカル配信を検証した。
+
+改修後の本番ビルドでも `node scripts/check-offline.mjs --scene-4k` が成功した。オフライン状態の UI から選んだ0.25秒の区間を3840×2160・60 fpsのVP9/Opusへ出力し、ffprobeで15フレームを確認した。コンテナの長さは音声パディングを含め0.260秒。試験エンコードから独立検査までクラウドのソフトウェアGPUで約51.5秒だった。
+
+[画面比較・タッチ試験](docs/TOUCH-REVIEW.md) · [テンプレートの監査とコンタクトシート](docs/TEMPLATES.md) · [ブラウザ・出力レビュー](docs/TOUCH-EXPORT-REVIEW.md) · [改修PR](https://github.com/Adint0n0/Audio-Visualizer/pull/2)
+
+`npm run typecheck`、`npm run lint`、Vitest 47 件、`npm run test:e2e` のブラウザ検査14本、`npm run test:stress` が通過した。長尺同期の合成素材では1,799.5秒にわたり、3測定点の誤差はすべて8.44 ms。60プリセットの3比率に加え、旧版と新版の各480フレームと、全240配色の描画を評価した。8秒のデモ成果物は [touch-studio-demo.mp4](docs/touch-studio-demo.mp4)。
