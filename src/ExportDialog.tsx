@@ -11,6 +11,17 @@ import {
   type ExportOptions,
 } from './export'
 import { defaultOutput, parseOutputSettings, type OutputSettings, type TimelineRange } from './model'
+import {
+  ASPECT_PRESETS,
+  MAX_SIDE,
+  aspectOf,
+  hasAspect,
+  lockedResolution,
+  resolutionPresets,
+  sizeForAspect,
+  validPixelSize,
+  type PixelSize,
+} from './output/resolution'
 import './export.css'
 
 type ExportRenderer = {
@@ -35,14 +46,6 @@ interface ExportDialogProps {
   onClose(): void
 }
 
-const SIZES = [
-  [1280, 720],
-  [1920, 1080],
-  [2560, 1440],
-  [3840, 2160],
-  [1080, 1920],
-  [1080, 1080],
-]
 const RATES = [
   [24, 1],
   [24000, 1001],
@@ -69,6 +72,14 @@ export function ExportDialog({
   onClose,
 }: ExportDialogProps) {
   const t = (en: string, ja: string) => (lang === 'ja' ? ja : en)
+  const aspect = aspectOf(initialOutput.width, initialOutput.height)
+  const aspectLabel = (ASPECT_PRESETS.find((preset) => hasAspect(initialOutput, preset)) ?? aspect).join(':')
+  const sizes = resolutionPresets(aspect)
+  const sourceResolution = sourceSize && { width: sourceSize[0], height: sourceSize[1] }
+  const originalSize =
+    sourceResolution && validPixelSize(sourceResolution) && hasAspect(sourceResolution, aspect)
+      ? sourceResolution
+      : null
   const [settings, set] = useState<ExportOptions>(() => ({
     ...initialOutput,
     start: initialRange[0],
@@ -81,8 +92,12 @@ export function ExportDialog({
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState([0, 0])
   const [resultUrl, setResultUrl] = useState('')
+  const [keepAspect, setKeepAspect] = useState(true)
+  const [sizeInput, setSizeInput] = useState<{ axis: keyof PixelSize; value: string } | null>(null)
   const [sizePreset, setSizePreset] = useState(() => {
-    const i = SIZES.findIndex(([w, h]) => w === initialOutput.width && h === initialOutput.height)
+    const i = sizes.findIndex(
+      ({ width, height }) => width === initialOutput.width && height === initialOutput.height,
+    )
     return i < 0 ? 'custom' : String(i)
   })
   const [ratePreset, setRatePreset] = useState(() => {
@@ -246,11 +261,19 @@ export function ExportDialog({
       } catch {
         /* The form displays its validation error. */
       }
-      if (output)
+      if (output) {
+        if (!hasAspect(output, aspect)) {
+          // A one-off canvas size must never replace the dimensions that define the editor frame.
+          output = { ...output, width: initialOutput.width, height: initialOutput.height }
+          // A legacy editor frame can have odd sides even when the one-off export used H.264.
+          if (output.videoCodec === 'avc' && (output.width % 2 || output.height % 2))
+            output.videoCodec = initialOutput.videoCodec
+        }
         onSaveOutput(
           output,
           options.start === 0 && options.end === duration ? null : [options.start, options.end],
         )
+      }
     }
     onClose()
   }
@@ -279,6 +302,31 @@ export function ExportDialog({
         step={step}
         min={min}
         max={max}
+      />
+    </label>
+  )
+  const dimensionField = (axis: keyof PixelSize, label: string) => (
+    <label className="field">
+      {label}
+      <input
+        type="number"
+        inputMode="numeric"
+        step="1"
+        min="2"
+        max={MAX_SIDE}
+        value={
+          sizeInput?.axis === axis ? sizeInput.value : Number.isFinite(settings[axis]) ? settings[axis] : ''
+        }
+        onChange={(e) => {
+          const n = e.target.valueAsNumber
+          setSizeInput({ axis, value: e.target.value })
+          update(
+            keepAspect && Number.isInteger(n) && n >= 2 && n <= MAX_SIDE
+              ? lockedResolution(n, axis, aspect)
+              : { [axis]: n },
+          )
+        }}
+        onBlur={() => setSizeInput(null)}
       />
     </label>
   )
@@ -323,6 +371,9 @@ export function ExportDialog({
             <X size={18} />
           </button>
         </header>
+        <p className="export-frame-ratio" aria-label={t('Editor aspect ratio', '編集画面の比率')}>
+          {t('Editor aspect ratio', '編集画面の比率')} <strong>{aspectLabel}</strong>
+        </p>
         <fieldset disabled={busy} className="export-fields">
           <label className="field">
             {t('Format', '形式')}
@@ -356,16 +407,20 @@ export function ExportDialog({
               onChange={(e) => {
                 const v = e.target.value
                 setSizePreset(v)
-                const size = v === 'original' ? sourceSize : SIZES[Number(v)]
-                if (size) update({ width: size[0], height: size[1] })
+                setSizeInput(null)
+                const size = v === 'original' ? originalSize : sizes[Number(v)]
+                if (size) {
+                  setKeepAspect(true)
+                  update(size)
+                }
               }}
             >
-              {SIZES.map(([w, h], i) => (
-                <option key={i} value={i}>
-                  {w} × {h}
+              {sizes.map(({ width, height }, i) => (
+                <option key={`${width}x${height}`} value={i}>
+                  {width} × {height}
                 </option>
               ))}
-              {sourceSize && <option value="original">{t('Original', '元動画サイズ')}</option>}
+              {originalSize && <option value="original">{t('Original', '元動画サイズ')}</option>}
               <option value="custom">{t('Custom', 'カスタム')}</option>
             </select>
           </label>
@@ -390,21 +445,38 @@ export function ExportDialog({
           </label>
           {sizePreset === 'custom' && (
             <>
-              {numberField(
-                t('Width (px)', '幅 (px)'),
-                settings.width,
-                (n) => update({ width: n }),
-                1,
-                2,
-                4096,
-              )}
-              {numberField(
-                t('Height (px)', '高さ (px)'),
-                settings.height,
-                (n) => update({ height: n }),
-                1,
-                2,
-                4096,
+              {dimensionField('width', t('Width (px)', '幅 (px)'))}
+              {dimensionField('height', t('Height (px)', '高さ (px)'))}
+              <label className="export-ratio-lock">
+                <input
+                  type="checkbox"
+                  checked={keepAspect}
+                  onChange={(e) => {
+                    const locked = e.target.checked
+                    setKeepAspect(locked)
+                    setSizeInput(null)
+                    if (locked && !hasAspect(settings, aspect)) {
+                      const edge = validPixelSize(settings)
+                        ? Math.min(settings.width, settings.height)
+                        : Math.min(initialOutput.width, initialOutput.height)
+                      update(
+                        sizeForAspect(edge, aspect[0], aspect[1]) ?? {
+                          width: initialOutput.width,
+                          height: initialOutput.height,
+                        },
+                      )
+                    }
+                  }}
+                />
+                {t('Lock to editor aspect ratio', '編集画面の比率に固定')}
+              </label>
+              {!keepAspect && (
+                <p className="export-ratio-note">
+                  {t(
+                    'Different output proportions add black borders around the composition.',
+                    '出力の比率が異なる場合は、構図を保つため周囲に黒帯が入ります。',
+                  )}
+                </p>
               )}
             </>
           )}

@@ -331,9 +331,24 @@ export default function App() {
     return () => window.removeEventListener('keydown', handle)
   })
   function createRenderer(width: number, height: number, times: Iterable<number>) {
-    const canvas = document.createElement('canvas'),
-      r = new SceneRenderer(canvas)
-    r.resize(width, height)
+    const { width: frameWidth, height: frameHeight } = project.output
+    const aspect = frameWidth / frameHeight
+    const sceneCanvas = document.createElement('canvas')
+    const addBorders = width * frameHeight !== height * frameWidth
+    const canvas = addBorders ? document.createElement('canvas') : sceneCanvas
+    const sceneWidth = Math.max(1, Math.min(width, Math.round(height * aspect)))
+    const sceneHeight = Math.max(1, Math.min(height, Math.round(width / aspect)))
+    let composite: CanvasRenderingContext2D | null = null
+    if (addBorders) {
+      canvas.width = width
+      canvas.height = height
+      composite = canvas.getContext('2d', { alpha: false })
+      if (!composite) throw Error('Could not prepare output canvas / 出力キャンバスを準備できません')
+      composite.fillStyle = '#000'
+      composite.fillRect(0, 0, width, height)
+    }
+    const r = new SceneRenderer(sceneCanvas)
+    r.resize(sceneWidth, sceneHeight, aspect)
     const frames = media?.hasVideo ? media.videoFrames(times) : undefined
     return {
       canvas,
@@ -343,6 +358,11 @@ export default function App() {
           throw Error('Video frame iterator ended early / 映像を最後までデコードできませんでした')
         const background = frames ? (decoded?.value ?? null) : images.get(project.background.imageId || '')
         r.render(project, t, media?.frame(t) || silentFrame, { images, background, frameAt: media?.frame })
+        composite?.drawImage(
+          sceneCanvas,
+          Math.floor((width - sceneWidth) / 2),
+          Math.floor((height - sceneHeight) / 2),
+        )
       },
       async dispose() {
         try {

@@ -29,14 +29,14 @@ import { useGestures } from './useGestures'
 import { clampTransform, initialSnap, type Transform, type Mode } from './transform'
 import { Precision, SnapSettings } from './Precision'
 import { Dialog } from './Dialog'
-import { sizeForAspect } from '../output/timing'
-
-const ASPECT_PRESETS = [
-  [16, 9],
-  [1, 1],
-  [9, 16],
-  [4, 3],
-] as const
+import {
+  ASPECT_PRESETS,
+  MAX_SIDE,
+  aspectOf,
+  hasAspect,
+  sizeForAspect,
+  type Aspect,
+} from '../output/resolution'
 
 type Tool = 'select' | 'translate' | 'rotate' | 'scale'
 type Props = {
@@ -60,8 +60,11 @@ export function Viewport(props: Props) {
   const { lang, project, media, selection } = props,
     ja = lang === 'ja'
   const { width: outputWidth, height: outputHeight } = project.output
-  const aspectPreset = ASPECT_PRESETS.find(([w, h]) => w * outputHeight === h * outputWidth)
+  const aspect = aspectOf(outputWidth, outputHeight)
+  const aspectPreset = ASPECT_PRESETS.find((preset) => hasAspect(project.output, preset))
   const selectedAspect = aspectPreset?.join(' / ') ?? 'custom'
+  const [customAspect, setCustomAspect] = useState<[string, string] | null>(null)
+  const [aspectError, setAspectError] = useState(false)
   const root = useRef<HTMLDivElement>(null),
     canvas = useRef<HTMLCanvasElement>(null),
     renderer = useRef<SceneRenderer | null>(null)
@@ -380,6 +383,15 @@ export function Viewport(props: Props) {
     }
   }
   const t = (en: string, jp: string) => (ja ? jp : en)
+  function applyAspect([w, h]: Aspect) {
+    const size = sizeForAspect(Math.min(outputWidth, outputHeight), w, h)
+    if (!size || (project.output.videoCodec === 'avc' && (size.width % 2 || size.height % 2))) {
+      setAspectError(true)
+      return
+    }
+    if (!hasAspect(project.output, [w, h])) props.edit({ ...project, output: { ...project.output, ...size } })
+    setCustomAspect(null)
+  }
   const activeTransform = gesture.draft?.transform
   const currentContext = project.layers.find((l) => l.id === context)
   const neighbor =
@@ -425,11 +437,14 @@ export function Viewport(props: Props) {
             <select
               value={selectedAspect}
               onChange={(e) => {
+                if (e.target.value === 'edit-custom') {
+                  setCustomAspect([String(aspect[0]), String(aspect[1])])
+                  setAspectError(false)
+                  return
+                }
                 const preset = ASPECT_PRESETS.find((pair) => pair.join(' / ') === e.target.value)
                 if (!preset) return
-                const [w, h] = preset
-                const size = sizeForAspect(Math.min(outputWidth, outputHeight), w, h)
-                props.edit({ ...project, output: { ...project.output, ...size } })
+                applyAspect(aspectOf(preset[0], preset[1]))
               }}
               aria-label={ja ? '画面比率' : 'Preview aspect ratio'}
             >
@@ -438,11 +453,8 @@ export function Viewport(props: Props) {
                   {w}:{h}
                 </option>
               ))}
-              {!aspectPreset && (
-                <option value="custom">
-                  {t('Custom', 'カスタム')} ({outputWidth} × {outputHeight})
-                </option>
-              )}
+              {!aspectPreset && <option value="custom">{aspect.join(':')}</option>}
+              <option value="edit-custom">{t('Custom…', 'カスタム…')}</option>
             </select>
             <ChevronDown size={11} />
           </label>
@@ -455,6 +467,55 @@ export function Viewport(props: Props) {
           </button>
         </div>
       </header>
+      {customAspect && (
+        <Dialog
+          title={t('Custom aspect ratio', 'カスタム比率')}
+          lang={lang}
+          close={() => setCustomAspect(null)}
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const [w, h] = customAspect.map(Number)
+              applyAspect(aspectOf(w, h))
+            }}
+          >
+            <div className="dialog-actions">
+              {customAspect.map((value, index) => (
+                <label className="field" key={index}>
+                  {index === 0 ? t('Width units', '幅の比率') : t('Height units', '高さの比率')}
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    max={MAX_SIDE}
+                    step="1"
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) => {
+                      const next: [string, string] = [...customAspect]
+                      next[index] = e.target.value
+                      setCustomAspect(next)
+                      setAspectError(false)
+                    }}
+                  />
+                </label>
+              ))}
+              <button className="btn primary" type="submit">
+                {t('Apply ratio', '比率を適用')}
+              </button>
+            </div>
+            {aspectError && (
+              <p role="alert" className="subtle">
+                {t(
+                  'No resolution fits this ratio and the current codec. Try smaller ratio numbers.',
+                  '現在のコーデックと寸法上限で使える解像度がありません。比率の数値を小さくしてください。',
+                )}
+              </p>
+            )}
+          </form>
+        </Dialog>
+      )}
       <div className="stage-space">
         <div
           className="stage-frame"

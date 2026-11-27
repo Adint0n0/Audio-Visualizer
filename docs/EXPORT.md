@@ -4,7 +4,7 @@ The studio renders each output frame through its Three.js scene renderer at the 
 
 ## Using the dialog
 
-The editor's aspect selector sets the export dimensions while keeping the current short edge where the output limits allow. To use a custom ratio, enter a width and height in the export dialog. Those dimensions also set the editor frame when the dialog closes.
+Set the aspect ratio in the editor. The export dialog generates matching resolution presets. The source size is available when it shares the editor ratio. Custom dimensions stay linked to that ratio by default and adjust to exact pixel multiples. Turning the lock off permits a one-off size with black borders if needed to preserve the composition.
 
 Choose a container, dimensions, frame rate and range in seconds. Render video becomes available when the short codec trials finish. Codec choices reflect a real trial at the requested dimensions. MP4 prefers H.264, and WebM prefers VP9. AV1 is available on devices that pass its trial. The encoder operates in quality latency mode. Select target bitrate or a constant quantizer. Constant quality requires encoder support and output size depends on the scene. Lower quantizers preserve more detail. Approximations for bitrate mode exclude unexpected encoder padding or unusually complex scenes.
 
@@ -14,7 +14,7 @@ Click Render video, then Download video. Closing the dialog releases the tempora
 
 ## 日本語
 
-編集画面の比率を選ぶと、書き出し寸法も変わります。出力上限の範囲で現在の短辺を維持します。カスタム比率は書き出し画面で幅と高さを指定でき、画面を閉じると編集枠にも反映されます。
+比率は編集画面で選びます。書き出し画面には、その比率に合う解像度の候補が表示されます。元動画サイズも比率が一致する場合に選べます。カスタムの幅と高さは初期状態で連動し、比率を保てる整数の組に調整されます。固定を解除した場合は、その書き出しだけ別の寸法を使い、必要に応じて黒帯で構図を保ちます。
 
 書き出し画面で形式、解像度、FPS、開始・終了時刻を指定します。コーデック候補は、指定寸法での短時間のエンコード試験に合格したものです。プレビュー画質・表示速度とは独立したサイズで、フレームごとにレンダリングします。ビットレートまたは一定品質（量子化値）を選べます。量子化値が小さいほど高画質で、一定品質では出力サイズが映像に依存します。
 

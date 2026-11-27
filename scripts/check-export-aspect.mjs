@@ -8,7 +8,7 @@ import { chromium, expect } from '@playwright/test'
 import { servePages } from './serve-pages.mjs'
 
 const grid = 128
-function normalizedFrame(input, image) {
+function normalizedFrame(input, image, crop) {
   return execFileSync(
     'ffmpeg',
     [
@@ -20,7 +20,7 @@ function normalizedFrame(input, image) {
       '-frames:v',
       '1',
       '-vf',
-      `scale=${grid}:${grid}:flags=area`,
+      [crop, `scale=${grid}:${grid}:flags=area`].filter(Boolean).join(','),
       '-pix_fmt',
       'rgb24',
       '-f',
@@ -99,22 +99,61 @@ try {
   await page.locator('.view-options').getByLabel('Resolution').selectOption('0.5')
   await page.getByTitle('Preview settings').click()
 
-  for (const [name, ratioChoice, width, height] of [
-    ['16:9', '16 / 9', 1920, 1080],
-    ['1:1', '1 / 1', 1080, 1080],
-    ['9:16', '9 / 16', 1080, 1920],
-    ['50:31', 'custom', 500, 310],
-  ]) {
+  async function readPreview() {
+    const png = await canvas.evaluate(async (element) => {
+      for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame)
+      return element.toDataURL('image/png').split(',')[1]
+    })
+    return normalizedFrame('pipe:0', Buffer.from(png, 'base64'))
+  }
+
+  async function downloadVideo(format, width, height) {
+    await dialog.getByRole('combobox', { name: 'Format', exact: true }).selectOption(format)
+    const codec = format === 'mp4' ? 'avc' : 'vp9'
+    await dialog.getByRole('combobox', { name: 'Video codec' }).selectOption(codec, { timeout: 90000 })
+    await dialog.getByRole('button', { name: 'Render video' }).click({ timeout: 90000 })
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 90000 }),
+      dialog.getByRole('link', { name: 'Download video' }).click({ timeout: 90000 }),
+    ])
+    const file = join(artifacts, `${width}x${height}.${format}`)
+    await download.saveAs(file)
+    const { streams } = JSON.parse(
+      execFileSync('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', file], { encoding: 'utf8' }),
+    )
+    const video = streams.find((stream) => stream.codec_type === 'video')
+    assert.deepEqual([video.width, video.height], [width, height])
+    assert.equal(video.codec_name, format === 'mp4' ? 'h264' : 'vp9')
+    assert.ok(!video.sample_aspect_ratio || ['1:1', 'N/A'].includes(video.sample_aspect_ratio))
+    assert.ok(streams.some((stream) => stream.codec_type === 'audio'))
+    return file
+  }
+
+  const standard = [
+    { name: '16:9', ratios: ['1280 × 720', '1920 × 1080', '2560 × 1440', '3840 × 2160'], size: [1280, 720] },
+    { name: '1:1', ratios: ['720 × 720', '1080 × 1080', '1440 × 1440', '2160 × 2160'], size: [1440, 1440] },
+    { name: '9:16', ratios: ['720 × 1280', '1080 × 1920', '1440 × 2560', '2160 × 3840'], size: [720, 1280] },
+    { name: '3:2', ratios: ['1080 × 720', '1620 × 1080', '2160 × 1440', '3240 × 2160'], size: [1620, 1080] },
+  ]
+  assert.ok((await ratio.locator('option').count()) >= 14)
+  let customPreview
+  for (const {
+    name,
+    ratios,
+    size: [width, height],
+  } of [...standard, { name: '50:31', size: [500, 310] }]) {
+    const custom = name === '50:31'
+    const ratioChoice = custom ? 'custom' : name.replace(':', ' / ')
     // Exercise both the orthographic and perspective camera paths.
     if (name === '9:16') await apply('Crystal Organ')
-    if (ratioChoice !== 'custom') {
+    if (!custom) {
       await ratio.selectOption(ratioChoice)
     } else {
-      await exportButton.click()
-      await resolution.selectOption('custom')
-      await dialog.getByLabel('Width (px)').fill(String(width))
-      await dialog.getByLabel('Height (px)').fill(String(height))
-      await close()
+      await ratio.selectOption('edit-custom')
+      const form = page.getByRole('dialog', { name: 'Custom aspect ratio' })
+      await form.getByLabel('Width units').fill('50')
+      await form.getByLabel('Height units').fill('31')
+      await form.getByRole('button', { name: 'Apply ratio' }).click()
     }
     await expect(ratio).toHaveValue(ratioChoice)
     await expect
@@ -127,48 +166,69 @@ try {
       video.currentTime = 2
     })
     await expect(page.locator('.clock')).toContainText('00:02.000')
-    // Let the paused WebGL canvas paint before reading it.
-    const png = await canvas.evaluate(async (element) => {
-      for (let i = 0; i < 4; i++) await new Promise(requestAnimationFrame)
-      return element.toDataURL('image/png').split(',')[1]
-    })
-    const preview = normalizedFrame('pipe:0', Buffer.from(png, 'base64'))
+    const preview = await readPreview()
+    if (custom) customPreview = preview
 
     await exportButton.click()
-    if (ratioChoice === 'custom') {
-      await expect(dialog.getByLabel('Width (px)')).toHaveValue(String(width))
-      await expect(dialog.getByLabel('Height (px)')).toHaveValue(String(height))
+    await expect(dialog.locator('.export-frame-ratio')).toContainText(name)
+    if (custom) {
+      const options = await resolution.locator('option').allTextContents()
+      assert.ok(options.length > 2)
+      assert.ok(
+        options.slice(0, -1).every((value) => {
+          const [w, h] = value.split(' × ').map(Number)
+          return w * 31 === h * 50
+        }),
+      )
+      await resolution.selectOption('custom')
+      await expect(dialog.getByRole('checkbox', { name: 'Lock to editor aspect ratio' })).toBeChecked()
+      await dialog.getByLabel('Width (px)').fill('500')
+      await expect(dialog.getByLabel('Height (px)')).toHaveValue('310')
     } else {
-      await expect(resolution.locator('option:checked')).toHaveText(`${width} × ${height}`)
+      assert.deepEqual(await resolution.locator('option').allTextContents(), [...ratios, 'Custom'])
+      await resolution.selectOption({ label: `${width} × ${height}` })
     }
     await dialog.getByLabel('Start (s)').fill('2')
     await dialog.getByLabel('End (s)').fill('2.1')
     for (const format of ['mp4', 'webm']) {
-      await dialog.getByRole('combobox', { name: 'Format', exact: true }).selectOption(format)
-      const codec = format === 'mp4' ? 'avc' : 'vp9'
-      await dialog.getByRole('combobox', { name: 'Video codec' }).selectOption(codec, { timeout: 90000 })
-      await dialog.getByRole('button', { name: 'Render video' }).click({ timeout: 90000 })
-      const [download] = await Promise.all([
-        page.waitForEvent('download', { timeout: 90000 }),
-        dialog.getByRole('link', { name: 'Download video' }).click({ timeout: 90000 }),
-      ])
-      const file = join(artifacts, `${width}x${height}.${format}`)
-      await download.saveAs(file)
-      const { streams } = JSON.parse(
-        execFileSync('ffprobe', ['-v', 'error', '-show_streams', '-of', 'json', file], { encoding: 'utf8' }),
-      )
-      const video = streams.find((stream) => stream.codec_type === 'video')
-      assert.deepEqual([video.width, video.height], [width, height])
-      assert.equal(video.codec_name, format === 'mp4' ? 'h264' : 'vp9')
-      assert.ok(!video.sample_aspect_ratio || ['1:1', 'N/A'].includes(video.sample_aspect_ratio))
-      assert.ok(streams.some((stream) => stream.codec_type === 'audio'))
+      const file = await downloadVideo(format, width, height)
       const { overlap, mae } = compareComposition(preview, normalizedFrame(file))
       console.log(
-        `PASS ${format} ${name} ${width}×${height} (${video.codec_name}), mask overlap ${(100 * overlap).toFixed(1)}%, RGB MAE ${mae.toFixed(2)}`,
+        `PASS ${format} ${name} ${width}×${height}, mask overlap ${(100 * overlap).toFixed(1)}%, RGB MAE ${mae.toFixed(2)}`,
       )
     }
     await close()
+    await expect(ratio).toHaveValue(ratioChoice)
+    assert.deepEqual(
+      await readPreview(),
+      preview,
+      'Changing output resolution changed the editor composition',
+    )
   }
+
+  // The explicit unlock letterboxes this export and does not override the saved editor dimensions.
+  await exportButton.click()
+  await expect(dialog.getByLabel('Width (px)')).toHaveValue('500')
+  await expect(dialog.getByLabel('Height (px)')).toHaveValue('310')
+  await dialog.getByRole('checkbox', { name: 'Lock to editor aspect ratio' }).uncheck()
+  await dialog.getByLabel('Width (px)').fill('640')
+  await dialog.getByLabel('Height (px)').fill('640')
+  const boxed = await downloadVideo('mp4', 640, 640)
+  assert.ok(
+    normalizedFrame(boxed)
+      .subarray(0, grid * 3)
+      .every((channel) => channel <= 3),
+  )
+  compareComposition(customPreview, normalizedFrame(boxed, undefined, 'crop=640:396:0:122'))
+  await close()
+  await expect(ratio).toHaveValue('custom')
+  assert.deepEqual(await readPreview(), customPreview)
+  await exportButton.click()
+  await expect(dialog.getByRole('checkbox', { name: 'Lock to editor aspect ratio' })).toBeChecked()
+  await expect(dialog.getByLabel('Width (px)')).toHaveValue('500')
+  await expect(dialog.getByLabel('Height (px)')).toHaveValue('310')
+  await close()
+  console.log('PASS one-off 640×640 output with black borders and unchanged editor composition')
   assert.deepEqual(errors, [])
 } finally {
   await browser?.close()
