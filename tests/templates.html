@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Template rendering test</title>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <script type="module">
+      import { templates } from '../src/templates'
+      import { parseProject } from '../src/model'
+      import { SceneRenderer } from '../src/scene'
+      const canvas = document.getElementById('scene')
+      const scene = new SceneRenderer(canvas)
+      const gl = scene.renderer.getContext()
+      const wave = Float32Array.from(
+        { length: 128 },
+        (_, i) => 0.53 * Math.sin(i / 11) + 0.29 * Math.cos(i / 3.5),
+      )
+      const right = Float32Array.from({ length: 128 }, (_, i) => 0.73 * Math.cos(i / 7.1))
+      const history = (ago) =>
+        Float32Array.from(
+          { length: 96 },
+          (_, i) =>
+            0.12 +
+            0.7 * (1 - i / 120) * Math.abs(Math.sin(i * 0.11 + ago * 4) * Math.cos(i * 0.039 - ago * 1.8)),
+        )
+      const audio = {
+        bands: history(0),
+        wave,
+        left: wave,
+        right,
+        rms: 0.37,
+        peak: 0.82,
+        onset: 0.14,
+        history,
+      }
+      window.ids = templates.map((t) => t.id)
+      window.renderTemplate = (id, w, h, save) => {
+        const project = parseProject(JSON.parse(JSON.stringify(templates.find((t) => t.id === id).create())))
+        scene.resize(w, h)
+        scene.render(project, 1.35, audio)
+        const pixels = new Uint8Array(w * h * 4)
+        gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+        if (gl.getError() !== gl.NO_ERROR) throw Error('WebGL error in ' + id)
+        let luminanceVariation = 0,
+          brightPixels = 0
+        for (let p = 4; p < pixels.length; p += 4) {
+          const delta = Math.max(...[0, 1, 2].map((i) => Math.abs(pixels[i] - pixels[p + i])))
+          luminanceVariation = Math.max(luminanceVariation, delta)
+          if (delta > 8) brightPixels++
+        }
+        return {
+          luminanceVariation,
+          brightPixels,
+          uri: save ? canvas.toDataURL('image/webp', 0.9) : null,
+        }
+      }
+      window.finishRenderer = () => scene.dispose()
+    </script>
+  </body>
+</html>
