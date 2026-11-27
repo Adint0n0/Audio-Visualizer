@@ -8,6 +8,12 @@
 4. Click or tap the waveform to seek. Open **Range** and enter the start and end times in seconds or drag the timeline handles. Enable looping to audition that section.
 5. Open **Export**. Set the container, dimensions, frame rate and audio format. After the codec trials finish, select a supported combination and render the video. Download it before closing the dialog. Rendering can take longer than the selected section's playing time.
 
+## Adjust settings on a phone
+
+Tap **Edit** in the bottom navigation to adjust settings while watching the preview. Choose a **Category** such as Appearance or Transform. Swipe vertically to scroll the setting list, including when starting on a slider. Drag a slider horizontally to change its value. Tap − or + for a single increment, or enter a value in the numeric field.
+
+Use **Expand** in the panel header for more space. In landscape the preview and settings sit side by side. Tap **Preview** to close the panel.
+
 ## Compose the scene
 
 - Use **Add layer** for a visualizer, caption, image or group. The eye controls visibility. Higher rows take a later draw order. Depth testing still determines how overlapping 3D surfaces occlude each other.
@@ -32,7 +38,7 @@ In the layer or scene's **Audio mappings**, choose a target such as **Scale · Y
 | Undo or redo | Ctrl/Cmd+Z or Ctrl/Cmd+Shift+Z |
 | Download a full project | Ctrl/Cmd+S or the project menu in the header |
 | Commit a numeric edit | Enter or move focus away |
-| Switch panels on a phone | Library, Viewport and Inspector tabs |
+| Switch panels on a phone | Scenes, Layers, Edit and Preview in the bottom navigation |
 | Change language or use fullscreen | EN/JA in the header or the fullscreen button in the viewport |
 
 Use the shortcuts outside a text field or dialog. Undo restores an entire slider or gizmo drag with one command.
@@ -49,3 +55,5 @@ Autosave belongs to the current browser profile and site. Keep a downloaded .avp
 - If the browser reports insufficient storage, adjust the range, bitrate or output dimensions. If the GPU context is lost, retry the viewport and restart the render.
 
 [Audio analysis](AUDIO-ANALYSIS.md) · [Encoding and measured export results](EXPORT.md) · [Project files and offline use](PROJECT-FORMAT.md) · [Template catalog](TEMPLATES.md)
+
+[Touch gestures and snapping](TOUCH-EDITING.md)

@@ -1,0 +1,538 @@
+[
+  {
+    "name": "360x640",
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      166,
+      342,
+      192
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "360x640-library",
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      33,
+      97,
+      293,
+      165
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1,
+          358,
+          358,
+          178
+        ],
+        "offset": 0,
+        "max": 4554
+      }
+    ]
+  },
+  {
+    "name": "360x640-layers",
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      33,
+      97,
+      293,
+      165
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1,
+          358,
+          358,
+          178
+        ],
+        "offset": 0,
+        "max": 64
+      }
+    ]
+  },
+  {
+    "name": "360x640-inspector",
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      33,
+      97,
+      293,
+      165
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1,
+          358,
+          358,
+          178
+        ],
+        "offset": 0,
+        "max": 289
+      }
+    ]
+  },
+  {
+    "name": "360x780",
+    "viewport": [
+      360,
+      780
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      236,
+      342,
+      192
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "390x844",
+    "viewport": [
+      390,
+      844
+    ],
+    "pageWidth": 390,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      259,
+      372,
+      209
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "390x844-inspector",
+    "viewport": [
+      390,
+      844
+    ],
+    "pageWidth": 390,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      130,
+      372,
+      209
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1,
+          468,
+          388,
+          272
+        ],
+        "offset": 0,
+        "max": 195
+      }
+    ]
+  },
+  {
+    "name": "412x915",
+    "viewport": [
+      412,
+      915
+    ],
+    "pageWidth": 412,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      253,
+      394,
+      222
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "640x360",
+    "viewport": [
+      640,
+      360
+    ],
+    "pageWidth": 640,
+    "documentScroll": 0,
+    "canvas": [
+      231,
+      94,
+      178,
+      100
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "780x360",
+    "viewport": [
+      780,
+      360
+    ],
+    "pageWidth": 780,
+    "documentScroll": 0,
+    "canvas": [
+      301,
+      94,
+      178,
+      100
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "844x390",
+    "viewport": [
+      844,
+      390
+    ],
+    "pageWidth": 844,
+    "documentScroll": 0,
+    "canvas": [
+      306,
+      94,
+      231,
+      130
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "844x390-inspector",
+    "viewport": [
+      844,
+      390
+    ],
+    "pageWidth": 844,
+    "documentScroll": 0,
+    "canvas": [
+      111,
+      94,
+      268,
+      151
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          491,
+          91,
+          352,
+          203
+        ],
+        "offset": 0,
+        "max": 264
+      }
+    ]
+  },
+  {
+    "name": "915x412",
+    "viewport": [
+      915,
+      412
+    ],
+    "pageWidth": 915,
+    "documentScroll": 0,
+    "canvas": [
+      322,
+      94,
+      270,
+      152
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "768x1024",
+    "viewport": [
+      768,
+      1024
+    ],
+    "pageWidth": 768,
+    "documentScroll": 0,
+    "canvas": [
+      9,
+      241,
+      750,
+      422
+    ],
+    "smallPrimary": [],
+    "scrollAreas": []
+  },
+  {
+    "name": "1024x768",
+    "viewport": [
+      1024,
+      768
+    ],
+    "pageWidth": 1024,
+    "documentScroll": 0,
+    "canvas": [
+      236,
+      139,
+      525,
+      295
+    ],
+    "smallPrimary": [],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          776,
+          115,
+          248,
+          492
+        ],
+        "offset": 0,
+        "max": 335
+      }
+    ]
+  },
+  {
+    "name": "1440x900",
+    "viewport": [
+      1440,
+      900
+    ],
+    "pageWidth": 1440,
+    "documentScroll": 0,
+    "canvas": [
+      282,
+      132,
+      849,
+      478
+    ],
+    "smallPrimary": [
+      {
+        "name": "Project files",
+        "size": [
+          124,
+          18
+        ]
+      },
+      {
+        "name": "Undo",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Redo",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "日本語に切り替え",
+        "size": [
+          48,
+          17
+        ]
+      },
+      {
+        "name": "Import media",
+        "size": [
+          129,
+          34
+        ]
+      },
+      {
+        "name": "Export",
+        "size": [
+          90,
+          34
+        ]
+      },
+      {
+        "name": "Focus mode",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Object",
+        "size": [
+          73,
+          29
+        ]
+      },
+      {
+        "name": "3D turn",
+        "size": [
+          76,
+          29
+        ]
+      },
+      {
+        "name": "View",
+        "size": [
+          62,
+          29
+        ]
+      },
+      {
+        "name": "Select",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Move",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Rotate",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Scale",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Switch camera",
+        "size": [
+          134,
+          17
+        ]
+      },
+      {
+        "name": "Precise transform",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Snap guides",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Preview settings",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Start of range",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Play",
+        "size": [
+          29,
+          27
+        ]
+      },
+      {
+        "name": "End of range",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Loop range",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Mute monitor",
+        "size": [
+          27,
+          28
+        ]
+      },
+      {
+        "name": "Range",
+        "size": [
+          88,
+          18
+        ]
+      }
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          115,
+          267,
+          624
+        ],
+        "offset": 0,
+        "max": 3066
+      },
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1146,
+          115,
+          294,
+          624
+        ],
+        "offset": 0,
+        "max": 74
+      }
+    ]
+  }
+]

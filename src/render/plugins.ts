@@ -2,6 +2,10 @@ import { createLayer, parseLayer, type Style, type Layer, type VisualSettings } 
 import { createElements } from './elements'
 import { createOrb, createCurve, createField } from './surfaces'
 import { createPrism } from './prism'
+import { createGalaxy } from './galaxy'
+import { createRadial } from './radial'
+import { createGlobe } from './globe'
+import { createDiodes } from './diodes'
 import type { Visual } from './common'
 
 type Field = keyof VisualSettings
@@ -29,6 +33,20 @@ function define(style: Style, create: RenderPlugin['create'], fields: Field[]): 
   }
 }
 export const plugins: Readonly<Record<Style, RenderPlugin>> = {
+  galaxy: define('galaxy', createGalaxy, ['count', 'radius', 'gain', 'speed', 'spread']),
+  radial: define('radial', createRadial, ['count', 'radius', 'gain', 'speed', 'width', 'maxHeight']),
+  globe: define('globe', createGlobe, ['count', 'radius', 'gain', 'speed', 'maxHeight']),
+  diodes: define('diodes', createDiodes, [
+    'rows',
+    'columns',
+    'width',
+    'spacing',
+    'depth',
+    'baseline',
+    'gain',
+    'reverse',
+    'mirror',
+  ]),
   spectrum: define('spectrum', createElements, [
     ...common,
     'count',

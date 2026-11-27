@@ -1,3 +1,13 @@
+import {
+  demoMusic,
+  finishMusic,
+  musicAt,
+  MUSIC_VALUES,
+  quietMusic,
+  SpectralDescriptors,
+  type MusicFeatures,
+} from './music-features'
+export type { MusicFeatures } from './music-features'
 // Values in the feature cache are sampled on the source timeline, independently of playback and output FPS.
 export const MAX_MEDIA_SECONDS = 30 * 60
 export const FEATURE_HZ = 60
@@ -106,6 +116,7 @@ export function validateAnalysis(s: Partial<AnalysisSettings> = {}): AnalysisSet
 }
 const clamp = (x: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, x))
 export interface AudioFrame {
+  music?: MusicFeatures
   bands: Float32Array
   wave: Float32Array
   left: Float32Array
@@ -119,6 +130,7 @@ export interface AudioFrame {
 const zeroBands = new Float32Array(BAND_COUNT),
   zeroWave = new Float32Array(WAVE_POINTS)
 export const silentFrame: AudioFrame = {
+  music: quietMusic,
   bands: zeroBands,
   wave: zeroWave,
   left: zeroWave,
@@ -157,6 +169,7 @@ export function bandEdges(settings: AnalysisSettings, rate: number) {
   return Float64Array.from({ length: BAND_COUNT + 1 }, (_, i) => edge(i))
 }
 export interface FeatureData {
+  music: Float32Array
   count: number
   duration: number
   sampleRate: number
@@ -242,6 +255,7 @@ export function analysisBytes(duration: number, normalization: AnalysisSettings[
   return (
     rows *
     (BAND_COUNT +
+      MUSIC_VALUES * 4 +
       2 * WAVE_POINTS +
       3 * 4 +
       4 * MOD_BANDS +
@@ -267,6 +281,7 @@ export function readFrame(data: FeatureData, time: number): AudioFrame {
     return Float32Array.from(data.bands.subarray(start, start + BAND_COUNT), (v) => v / 255)
   }
   return {
+    music: musicAt(data.music, index),
     resolveMod: (mod) => resolveMod(data, index, mod),
     bands: bandsAt(index),
     wave,
@@ -296,6 +311,7 @@ export function demoFrame(time: number): AudioFrame {
   const left = waveAt(0),
     right = waveAt(0.7)
   return {
+    music: demoMusic(time),
     bands: bandsAt(time),
     wave: left,
     left,
@@ -390,6 +406,7 @@ function envelopeCoefficient(ms: number) {
 // Analysis owns only the sliding PCM window and a bounded, compressed timeline. Samples arrive in timestamp order.
 export class FeatureBuilder {
   readonly data: FeatureData
+  private descriptors: SpectralDescriptors
   private fft: Spectrum
   private left: Float32Array
   private right: Float32Array
@@ -432,6 +449,7 @@ export class FeatureBuilder {
     const count = Math.ceil(duration * FEATURE_HZ) + 1
     this.data = {
       count,
+      music: new Float32Array(count * MUSIC_VALUES),
       duration,
       sampleRate: rate,
       settings: cfg,
@@ -444,6 +462,7 @@ export class FeatureBuilder {
     }
     if (cfg.normalization === 'song') this.songLevels = new Uint16Array(count * BAND_COUNT)
     this.fft = new Spectrum(cfg.fftSize, cfg.window)
+    this.descriptors = new SpectralDescriptors(rate, cfg.fftSize, MOD_BANDS, this.fft.bandwidth)
     this.hopRadius = Math.max(1, Math.round(rate / FEATURE_HZ / 2))
     this.radius = Math.max(cfg.fftSize / 2, this.hopRadius)
     const capacity = 2 ** Math.ceil(Math.log2(this.radius * 2 + 16384))
@@ -517,6 +536,7 @@ export class FeatureBuilder {
     if (min !== 0 || span !== 1)
       for (let i = 0; i < this.data.bands.length; i++)
         this.data.bands[i] = Math.round(min * 255 + span * this.data.bands[i])
+    finishMusic(this.data.music, this.data.metrics, FEATURE_HZ)
     return this.data
   }
   private drain() {
@@ -549,10 +569,11 @@ export class FeatureBuilder {
         rr = (im[i] + im[j]) * 0.5,
         ri = (re[j] - re[i]) * 0.5
       const l = lr * lr + li * li,
-        r = rr * rr + ri * ri,
-        cross = 2 * (lr * rr + li * ri)
-      const mid = Math.max(0, (l + r + cross) * 0.25),
-        side = Math.max(0, (l + r - cross) * 0.25)
+        r = rr * rr + ri * ri
+      // Form the channel sum/difference BEFORE taking power. Subtracting large powers loses
+      // quiet Side information in correlated stereo and creates residual energy in digital mono.
+      const mid = ((lr + rr) * (lr + rr) + (li + ri) * (li + ri)) * 0.25
+      const side = ((lr - rr) * (lr - rr) + (li - ri) * (li - ri)) * 0.25
       const edge = i === 0 || i === n / 2,
         factor = (edge ? 0.5 : 1) * scale
       this.magnitude[i] = Math.sqrt(ch === 0 ? l : ch === 1 ? r : ch === 2 ? mid : side) * factor
@@ -563,6 +584,7 @@ export class FeatureBuilder {
       this.channelEnergy[2 * MOD_BANDS + bucket] += mid * power
       this.channelEnergy[3 * MOD_BANDS + bucket] += side * power
     }
+    this.descriptors.measure(this.data.music, this.frameIndex, this.magnitude, this.channelEnergy, ch)
     const energyBase = this.frameIndex * 4 * MOD_BANDS
     for (let i = 0; i < 4 * MOD_BANDS; i++)
       this.data.channelBands[energyBase + i] = Math.round(

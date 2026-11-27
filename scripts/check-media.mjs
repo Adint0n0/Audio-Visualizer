@@ -88,6 +88,8 @@ try {
       }
       const controller = new AbortController()
       const before = data.frame(0.5).rms
+      const tone = data.frame(0.5).music
+      const beforeAudio = data.frame(0.1).music
       const abort = await data
         .reanalyze({ channel: 'side' }, { signal: controller.signal, onProgress: () => controller.abort() })
         .then(
@@ -105,6 +107,9 @@ try {
         before,
         after,
         side: data.frame(0.5).rms,
+        tone,
+        beforeAudio,
+        sideFeatures: data.frame(0.5).music,
         first: data.frame(0.1).rms,
         duration: data.duration,
         start: data.startTimestamp,
@@ -124,6 +129,13 @@ try {
   assert.deepEqual(result.sequential, [result.early, result.early, result.late, result.late])
   assert.equal(result.first, 0)
   assert.equal(result.side, 0)
+  assert.equal(result.beforeAudio.centroidHz, 0)
+  assert.ok(result.sideFeatures.mid < 1e-12)
+  assert.equal(result.sideFeatures.brightness, 0)
+  assert.equal(result.sideFeatures.beat, 0)
+  assert.ok(result.tone.mid > 0.05)
+  assert.ok(Math.abs(result.tone.centroidHz - 2400) < 120)
+  assert.equal(result.tone.tempo, 0)
   assert.ok(result.before > 0.05)
   assert.equal(result.after, result.before)
   await page.locator('input').setInputFiles(tooLong)

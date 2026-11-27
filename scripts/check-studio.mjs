@@ -112,17 +112,17 @@ try {
   await phone.waitForFunction(() => !document.querySelector('.export-btn').disabled, {}, { timeout: 90000 })
   await phone.screenshot({ path: join(artifacts, 'mobile.png') })
   assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-  await phone.locator('.mobile-tabs button').first().tap()
+  await phone.locator('button[data-sheet="library"]').tap()
   await phone.locator('.template-pick').first().tap()
   await phone.getByRole('button', { name: 'シーンを置換' }).tap()
-  await phone.locator('.mobile-tabs button').last().tap()
+  await phone.locator('button[data-sheet="inspector"]').tap()
   await phone.getByRole('button', { name: '詳細', exact: true }).tap()
   assert.equal(
     await phone.getByRole('button', { name: '詳細', exact: true }).getAttribute('aria-pressed'),
     'true',
   )
   await phone.setViewportSize({ width: 844, height: 390 })
-  await phone.locator('.mobile-tabs button').nth(1).tap()
+  await phone.locator('button[data-sheet="stage"]').tap()
   await phone.locator('.stage-frame canvas').waitFor({ state: 'visible' })
   assert.ok(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
   await page

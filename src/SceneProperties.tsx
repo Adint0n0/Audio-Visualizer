@@ -37,19 +37,14 @@ export function SceneProperties({
   }, [project])
   const bg = project.background
   const cam = project.camera
-  const patchBg = (delta: Partial<typeof bg>) =>
-    onChange({ ...project, background: { ...bg, ...delta } })
+  const patchBg = (delta: Partial<typeof bg>) => onChange({ ...project, background: { ...bg, ...delta } })
   const previewBg = (delta: Partial<typeof bg>) =>
     onPreview?.({ ...project, background: { ...bg, ...delta } })
   const patchCam = (delta: Partial<typeof cam>) => onChange({ ...project, camera: { ...cam, ...delta } })
   return (
     <>
-      <Section title={t('Background', '背景')} open>
-        <Color
-          label={t('Backdrop', '背景色')}
-          value={bg.color}
-          onChange={(color) => patchBg({ color })}
-        />
+      <Section category="background" title={t('Background', '背景')} open>
+        <Color label={t('Backdrop', '背景色')} value={bg.color} onChange={(color) => patchBg({ color })} />
         {backgroundIsVideo ? (
           <small className="ip-help">{t('Original video background', '元動画を背景に使用中')}</small>
         ) : (
@@ -111,7 +106,7 @@ export function SceneProperties({
             />
           ))}
       </Section>
-      <Section title={t('Output camera', '出力カメラ')} open={!advanced}>
+      <Section category="camera" title={t('Output camera', '出力カメラ')} open={!advanced}>
         <Choice
           label={t('Projection', '投影法')}
           value={cam.projection}
@@ -191,7 +186,7 @@ export function SceneProperties({
       </Section>
       {advanced && (
         <>
-          <Section title={t('Lighting', '照明')}>
+          <Section category="lighting" title={t('Lighting', '照明')}>
             {(['ambient', 'directional', 'point', 'spot'] as const).map((key) => {
               const lamp = project.lights[key]
               const patch = (delta: Partial<typeof lamp>) =>
@@ -201,11 +196,7 @@ export function SceneProperties({
                 })
               return (
                 <Section key={key} title={fmt(key)}>
-                  <Color
-                    label={fmt('color')}
-                    value={lamp.color}
-                    onChange={(color) => patch({ color })}
-                  />
+                  <Color label={fmt('color')} value={lamp.color} onChange={(color) => patch({ color })} />
                   <BoundNumber
                     field="intensity"
                     label={t('Intensity', '強度')}
@@ -231,7 +222,7 @@ export function SceneProperties({
               )
             })}
           </Section>
-          <Section title={t('Scene effects', 'シーン効果')}>
+          <Section category="effects" title={t('Scene effects', 'シーン効果')}>
             {(
               [
                 ['bloom', fmt('bloom')],

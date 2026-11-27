@@ -1247,3 +1247,626 @@ option {
     padding: 4px;
   }
 }
+
+/* A persistent stage and a single scrolling surface per editing sheet. */
+.sheet-heading,
+.sheet-size,
+.sheet-close {
+  display: none;
+}
+.touch-modes,
+.viewport-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.touch-modes button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #aab4af;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-weight: 650;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.touch-modes button[aria-pressed='true'],
+.precision-tabs button[aria-pressed='true'] {
+  background: #233c30;
+  color: var(--accent);
+}
+.selection-outline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 1px dashed #abf7d5a0;
+  border-radius: 4px;
+  pointer-events: none;
+}
+.snap-line {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  background: #a4ffdb;
+  box-shadow: 0 0 8px #60ffb9a0;
+}
+.snap-x {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+}
+.snap-y {
+  height: 1px;
+  left: 0;
+  right: 0;
+}
+.transform-readout {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #10231de8;
+  color: #c5ffe6;
+  font: 10px var(--mono);
+  pointer-events: none;
+}
+.viewport.focus-view {
+  position: fixed;
+  display: flex;
+  inset: 0;
+  width: 100%;
+  height: var(--visible-height, 100dvh);
+  z-index: 7;
+  padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
+}
+.dialog {
+  max-height: calc(
+    var(--visible-height, 100dvh) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px
+  );
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.precision-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.precision-space,
+.snap-settings label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.precision-space {
+  font-size: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  color: var(--muted);
+}
+.precision-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.precision-row label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.precision-row input,
+.snap-settings input[type='number'] {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+}
+.snap-settings input[type='number'] {
+  width: 94px;
+}
+.snap-settings label:has(input[type='checkbox']) {
+  justify-content: flex-start;
+  cursor: pointer;
+}
+.snap-settings input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+.precision-row button,
+.precision-tabs .btn,
+.view-options .btn,
+.dialog-actions .btn {
+  min-height: 44px;
+}
+.view-options {
+  overscroll-behavior: contain;
+}
+@media (max-width: 1120px) {
+  .camera-toggle,
+  .gizmos {
+    display: none;
+  }
+  .viewport-foot {
+    gap: 4px;
+  }
+}
+@media (min-width: 901px) and (max-width: 1040px) {
+  .touch-modes button {
+    padding-inline: 4px;
+  }
+  .touch-modes button svg {
+    display: none;
+  }
+}
+@media (max-width: 900px), (max-height: 560px) and (pointer: coarse) {
+  .app {
+    height: var(--visible-height, 100dvh);
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+  .appbar {
+    min-height: 48px;
+    padding-inline: 8px;
+    gap: 3px;
+  }
+  .brand {
+    font-size: 20px;
+  }
+  .brand-period,
+  .brand-divider,
+  .project-menu span,
+  .bar-divider,
+  .bar-actions .undo + .bar-divider,
+  .import-btn span {
+    display: none;
+  }
+  .bar-actions {
+    gap: 0;
+  }
+  .language {
+    margin: 0;
+  }
+  .appbar .icon-btn,
+  .appbar .project-menu,
+  .appbar .language,
+  .appbar .import-btn {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .appbar .undo {
+    display: none;
+  }
+  .appbar .export-btn {
+    min-height: 42px !important;
+    padding-inline: 8px;
+  }
+  .project-menu > svg:last-child {
+    display: none;
+  }
+  .editor {
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+  }
+  .editor .viewport {
+    height: auto;
+    grid-area: 1/1;
+    display: flex;
+    min-height: 0;
+  }
+  .viewport-head {
+    padding: 0 9px;
+    min-height: 35px;
+  }
+  .viewport-head .icon-btn {
+    min-height: 44px;
+  }
+  .viewport-head h2,
+  .render-badge {
+    display: none;
+  }
+  .view-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .ratio-select {
+    padding-left: 0;
+    border: 0;
+  }
+  .ratio-select select {
+    min-height: 44px;
+  }
+  .stage-space {
+    padding: 4px 9px;
+    min-height: 0;
+  }
+  .stage-frame {
+    flex-shrink: 0;
+  }
+  .scene-caption,
+  .statusbar,
+  .camera-toggle,
+  .gizmos {
+    display: none;
+  }
+  .viewport-foot {
+    padding: 0 4px;
+    min-height: 46px;
+    gap: 2px;
+  }
+  .viewport-foot button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .touch-modes {
+    gap: 0;
+  }
+  .touch-modes button {
+    padding-inline: 6px;
+  }
+  .touch-modes button svg {
+    display: none;
+  }
+  .viewport-actions {
+    gap: 0;
+  }
+  .viewport-actions .icon-btn {
+    min-width: 44px;
+  }
+  .view-options {
+    padding: 3px;
+    max-height: 86px;
+    overflow: auto;
+  }
+  .view-options select,
+  .view-options .btn {
+    min-height: 40px;
+  }
+  .sheet-open .editor {
+    grid-template-rows: minmax(105px, 1fr) minmax(0, 46%);
+  }
+  .sheet-open.sheet-tall .editor {
+    grid-template-rows: minmax(84px, 1fr) minmax(0, 64%);
+  }
+  .sheet-open .viewport-head {
+    display: none;
+  }
+  .editor .left-dock,
+  .editor .right-dock {
+    grid-area: 2/1;
+    height: auto;
+    display: none;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid #323e38;
+    border-radius: 14px 14px 0 0;
+    background: #1b201e;
+    overflow: hidden;
+  }
+  .mobile-library .editor .left-dock,
+  .mobile-layers .editor .left-dock,
+  .mobile-inspector .editor .right-dock {
+    display: flex;
+  }
+  .editor .dock-tabs {
+    display: none;
+  }
+  .editor .dock-scroll {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+  .sheet-heading,
+  .inspector-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 7px 0 10px;
+    gap: 5px;
+    min-height: 44px;
+    flex: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet-size,
+  .sheet-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    min-width: 44px;
+    color: #adb9b3;
+    font-size: 11px;
+  }
+  .sheet-size[aria-expanded='false'] svg {
+    transform: rotate(180deg);
+  }
+  .inspector-top h2 {
+    font-size: 12px;
+    flex: 1;
+  }
+  .inspector-top h2 svg {
+    display: none;
+  }
+  .advanced-btn {
+    white-space: nowrap;
+    min-height: 44px;
+  }
+  .mobile-tabs {
+    display: flex;
+    justify-content: stretch;
+    order: initial;
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    min-height: 52px;
+    background: #181c1a;
+  }
+  .mobile-tabs button {
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    min-height: 52px;
+    padding: 4px 0;
+    font-size: 10px;
+    border: 0;
+  }
+  .mobile-tabs button[aria-pressed='true'] {
+    color: var(--accent);
+    background: #23332b;
+  }
+  .timeline {
+    padding: 0 8px 5px;
+  }
+  .timeline-head {
+    min-height: 44px;
+    gap: 2px;
+  }
+  .timeline-head h2,
+  .track-label {
+    display: none;
+  }
+  .track-region {
+    min-height: 35px;
+  }
+  .waveform {
+    height: 25px;
+  }
+  .sheet-open .timeline .tracks,
+  .keyboard-inset .timeline {
+    display: none;
+  }
+  .transport button,
+  .timeline-tools button {
+    min-height: 44px;
+    min-width: 37px;
+  }
+  .timeline-tools .text-btn {
+    font-size: 11px;
+    gap: 4px;
+  }
+  .clock {
+    font-size: 10px;
+  }
+  .clock em {
+    display: none;
+  }
+  .mobile-library .cards {
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  }
+  .dialog,
+  .modal {
+    max-height: calc(var(--visible-height, 100dvh) - 20px);
+  }
+  .dialog input,
+  .modal input,
+  .dock-scroll input:not([type='range'], [type='color'], [type='checkbox']) {
+    font-size: 16px;
+  }
+  .keyboard-inset.sheet-open .editor {
+    grid-template-rows: minmax(44px, 1fr) minmax(0, 72%);
+  }
+  .keyboard-inset .viewport-foot {
+    display: none;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+  .sheet-open .editor,
+  .sheet-open.sheet-tall .editor {
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr) minmax(255px, 42%);
+  }
+  .editor .left-dock,
+  .editor .right-dock {
+    grid-area: 1/2;
+    border-radius: 12px 0 0 0;
+  }
+  .mobile-tabs,
+  .mobile-tabs button {
+    min-height: 44px;
+  }
+  .appbar {
+    min-height: 44px;
+  }
+  .timeline .tracks {
+    display: none;
+  }
+}
+.touch-history {
+  display: none;
+}
+@media (max-width: 900px), (max-height: 560px) and (pointer: coarse) {
+  .touch-history {
+    display: flex;
+    gap: 0;
+  }
+  .touch-history button {
+    min-width: 44px;
+  }
+  .sheet-open .viewport-head {
+    display: flex;
+    min-height: 35px;
+  }
+  .sheet-open .viewport-head .icon-btn,
+  .sheet-open .ratio-select select {
+    min-height: 36px;
+  }
+  .keyboard-inset .viewport-head {
+    display: none;
+  }
+}
+.library-filter-toggle {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.extra-library-filters {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.extra-library-filters label,
+.template-colors {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #b9c6be;
+  font-size: 12px;
+}
+.extra-library-filters select,
+.template-colors select {
+  min-width: 45%;
+  min-height: 36px;
+}
+.template-description {
+  margin: 10px 0;
+  font-size: 13px;
+  color: #bbc7bf;
+  line-height: 1.5;
+}
+.template-live {
+  position: relative;
+}
+.template-live canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 7px;
+  background: #080b0a;
+}
+.template-live .btn {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: #17241fe8;
+}
+.swatches {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.swatches i {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+@media (pointer: coarse) {
+  .search-box,
+  .library-filter-toggle,
+  .extra-library-filters select,
+  .template-colors select,
+  .template-live .btn {
+    min-height: 44px;
+  }
+  .library .star {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(225deg, #121716d9, transparent);
+  }
+}
+.touch-hint {
+  display: none;
+}
+@media (pointer: coarse) {
+  .touch-hint {
+    display: block;
+    text-align: center;
+    color: #adbbb3;
+    background: #151b17;
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  .sheet-open .touch-hint,
+  .keyboard-inset .touch-hint {
+    display: none;
+  }
+}
+.selection-outline.is-holding {
+  border-style: solid;
+  border-color: #afffdc;
+  box-shadow: inset 0 0 0 2px #afffdc55;
+}
+@media (max-width: 900px), (max-height: 560px) and (pointer: coarse) {
+  .appbar .export-btn,
+  .timeline-tools .text-btn {
+    min-height: 44px !important;
+  }
+  .timeline {
+    padding-inline: 6px;
+  }
+  .timeline-tools,
+  .timeline-head .transport {
+    gap: 0;
+  }
+  .transport button,
+  .timeline-tools button,
+  .view-controls .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .sheet-open .viewport-head .icon-btn {
+    min-height: 44px;
+  }
+  .clock {
+    font-size: 9px;
+    margin-inline: 1px;
+  }
+  .timeline-tools .text-btn {
+    padding-inline: 4px;
+  }
+  .timeline-tools .text-btn svg:last-child {
+    display: none;
+  }
+}
+.project-guide {
+  min-height: 44px;
+}
+@media (min-width: 901px) and (pointer: coarse) {
+  .appbar .undo,
+  .appbar .import-btn,
+  .appbar .export-btn,
+  .viewport-head .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+.snap-settings select {
+  min-width: 72px;
+  min-height: 44px;
+}

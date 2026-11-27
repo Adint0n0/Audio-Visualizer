@@ -1,0 +1,60 @@
+{
+  "panels": [
+    {
+      "name": "library",
+      "owner": "dock-scroll",
+      "from": 0,
+      "bottom": 4554,
+      "max": 4554
+    },
+    {
+      "name": "layers",
+      "owner": "dock-scroll",
+      "from": 0,
+      "bottom": 1318,
+      "max": 1318
+    },
+    {
+      "name": "inspector",
+      "owner": "dock-scroll",
+      "from": 0,
+      "bottom": 289,
+      "max": 289
+    }
+  ],
+  "safeInsets": [
+    20,
+    28,
+    20,
+    28
+  ],
+  "hold": true,
+  "snapLatch": true,
+  "gesture": [
+    1.476,
+    0.871,
+    0,
+    0,
+    0,
+    -30,
+    2,
+    2,
+    2
+  ],
+  "captureRollback": true,
+  "orbit": [
+    -16.859839286372566,
+    23.51131350337706,
+    3.5330065233942385
+  ],
+  "cameraIsolated": true,
+  "keyboardViewport": [
+    360,
+    390
+  ],
+  "pointerEvents": {
+    "trusted": true,
+    "downs": 84,
+    "cancels": 52
+  }
+}

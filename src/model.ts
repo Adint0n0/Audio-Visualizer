@@ -16,6 +16,10 @@ export const STYLES = [
   'particles',
   'polygon',
   'prism',
+  'galaxy',
+  'radial',
+  'diodes',
+  'globe',
 ] as const
 export const LAYOUTS = [
   'line',

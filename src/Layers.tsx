@@ -32,7 +32,7 @@ import {
 } from './model'
 import type { Layer, LayerKind, Project } from './model'
 import type { Language } from './InspectorFields'
-import { translator } from './InspectorFields'
+import { translator, useCompactPanel } from './InspectorFields'
 import { term } from './panelLanguage'
 import './panels.css'
 
@@ -53,6 +53,7 @@ const kindIcons = {
 }
 
 export function Layers({ project, selection, onSelect, onChange, lang }: PanelProps) {
+  const compact = useCompactPanel()
   const [addMode, setAddMode] = useState(false)
   const [tools, setTools] = useState(false)
   const [multi, setMulti] = useState(false)
@@ -118,11 +119,18 @@ export function Layers({ project, selection, onSelect, onChange, lang }: PanelPr
     onChange({ ...project, layers })
   }
   const duplicate = () => operation(duplicateLayers)
-  const icon = (label: string, action: () => void, child: React.ReactNode, disabled = false) => (
+  const icon = (
+    label: string,
+    action: () => void,
+    child: React.ReactNode,
+    disabled = false,
+    pressed?: boolean,
+  ) => (
     <button
       type="button"
       className="ip-icon-btn"
       aria-label={label}
+      aria-pressed={pressed}
       title={label}
       disabled={disabled}
       onClick={action}
@@ -142,8 +150,16 @@ export function Layers({ project, selection, onSelect, onChange, lang }: PanelPr
             t('Select multiple', '複数選択'),
             () => setMulti(!multi),
             <SquareCheck size={16} className={multi ? 'ip-accent' : ''} />,
+            false,
+            multi,
           )}
-          {icon(t('Layer tools', 'レイヤー操作'), () => setTools(!tools), <MoreHorizontal size={18} />)}
+          {icon(
+            t('Layer tools', 'レイヤー操作'),
+            () => setTools(!tools),
+            <MoreHorizontal size={18} />,
+            false,
+            tools,
+          )}
         </div>
       </header>
       <ul className="ly-list">
@@ -155,7 +171,7 @@ export function Layers({ project, selection, onSelect, onChange, lang }: PanelPr
             <li
               key={layer.id}
               className={'ly-row' + (selected ? ' is-selected' : '') + (layer.visible ? '' : ' is-hidden')}
-              draggable={!layer.locked}
+              draggable={!compact && !layer.locked}
               onDragStart={(e) => {
                 dragged.current = layer.id
                 e.dataTransfer.setData('text/plain', layer.id)

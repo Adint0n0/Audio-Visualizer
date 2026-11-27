@@ -3,7 +3,14 @@ import type { AudioFrame } from '../analysis'
 import type { Layer } from '../model'
 
 export type Frame = { layer: Layer; audio: AudioFrame; time: number; seed: number }
-export type Visual = { object: T.Object3D; update: (frame: Frame) => void; dispose?: () => void }
+export type BoundsVisitor = (worldPoint: T.Vector3) => void
+export type Visual = {
+  object: T.Object3D
+  update: (frame: Frame) => void
+  dispose?: () => void
+  /** Shader-displaced geometry supplies its visible world-space extent for framing and snapping. */
+  bounds?: (visit: BoundsVisitor) => void
+}
 export const TAU = Math.PI * 2
 export const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
 export const band = (bins: ArrayLike<number>, u: number) =>

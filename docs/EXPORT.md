@@ -35,6 +35,7 @@ The script builds an isolated test entry, opens a local browser context and exec
 | Synthetic clicks against white video frames at 0.15, 0.65 and 1.15 s | Maximum absolute timing error measured at the click peak was 6.87 ms for WebM and 9.88 ms for MP4, within one 50 ms frame. |
 | Decode-free whole-track remux of each generated track | SHA-256 compared equal for every audio packet. |
 | Production editor offline, Prism Current with Phase Drift WAV from 2.00–2.25 s | VP9/Opus WebM at 3840×2160, ffprobe counted 15 frames at 60/1 fps and reported 0.260 s including padding. FFmpeg decoded the rendered image. Codec trial, export and independent verification took 63.883 s combined on SwiftShader. |
+| Production editor offline, updated Binary Stars default with Phase Drift WAV from 2.00–2.25 s | VP9/Opus WebM at 3840×2160, 15 frames at 60/1 fps and 0.260 s including padding. The complete trial, render and decoded-image check took 34.275 s under SwiftShader. See the [four-scene output and preview measurements](TOUCH-EXPORT-REVIEW.md). |
 | WebM VP9/Opus, 3840×2160 at 60 fps | 15 frames of a 0.25 s test pattern decoded. |
 | WebM VP9/Opus, 1920×1080 at 24 fps | 1,440 frames of a 60 s test pattern decoded. |
 | MP4 H.264/AAC, 1920×1080 at 1 fps | 1,800 frames, 1,799.5 s. Audio retained by packet copy. At t = 1, 900 and 1,798 s, the measured audio peak was 8.44 ms after the white frame at each point. |
@@ -53,3 +54,9 @@ Test host reported an Intel Xeon Platinum 8573C. These measurements exercise the
 A separate Gecko run used Debian Firefox ESR 153.5.1 with Xvfb and software Mesa on Linux. The production build served the Pages headers, initialized WebGL 2 without a renderer error, analyzed the bundled track and offered H.264, AV1 and VP9 in the MP4 codec menu. The full scene rendered and downloaded as a 214,159-byte 1920×1080 MP4. The browser's independent playback element read a duration of 0.255958 s for a requested 0.25 s range. After the local HTTP server stopped, reloading the app succeeded from its service worker cache, including the demo WAV and cross-origin isolation.
 
 Run `FIREFOX_PATH=/path/to/firefox-esr node scripts/check-firefox.mjs` after `npm run build`. A virtual or physical display enables the visual checks. The test additionally exercises the cached offline shell in headless environments. On this cloud host Firefox's standard content sandbox requires a runtime that permits its normal user-namespace setup. The Firefox and Xvfb packages used for the check were extracted from Debian packages verified against Debian's signed release index.
+
+## WebKitGTK
+
+The Linux GTK port of WebKit 2.52.6 loaded the production build, rendered WebGL 2, advertised actual AVC, AV1 and VP9 MP4 trials, and restarted with its HTTP origin shut down. The standard MiniBrowser WebDriver test runs with `node scripts/check-webkit.mjs`. Set `WEBKIT_DRIVER_PATH` and `WEBKIT_BROWSER_PATH` when installed in a custom location. This check used a software Mesa display and signed Debian packages.
+
+At the bundled WAV's native 24 kHz sample rate, the system AAC encoder produced an MP4 audio start at +0.061333 s for PCM supplied at zero. Encoder trials now read the first audio timestamp as well as checking packet presence. A late AAC trial retries with the local WebAssembly AAC encoder. A repeated timing failure excludes that configuration from the menu. In the real scene export, FFprobe found both tracks starting at zero, eight H.264 video frames over the requested 0.25 s, and a 0.256 s AAC track including encoder padding.

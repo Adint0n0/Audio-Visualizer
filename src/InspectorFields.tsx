@@ -1,4 +1,12 @@
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import type { ReactNode } from 'react'
 
 export type Language = 'en' | 'ja'
@@ -8,21 +16,60 @@ export const translator =
   (en, ja) =>
     lang === 'ja' ? ja : en
 
+export type Category =
+  | 'visual'
+  | 'geometry'
+  | 'path'
+  | 'text'
+  | 'image'
+  | 'appearance'
+  | 'transform'
+  | 'audio'
+  | 'motion'
+  | 'presets'
+  | 'background'
+  | 'camera'
+  | 'lighting'
+  | 'effects'
+  | 'analysis'
+export const PanelContext = createContext<{ lang: Language; category: Category | null }>({
+  lang: 'en',
+  category: null,
+})
+const panelQuery = '(max-width: 900px), (max-height: 560px) and (pointer: coarse)'
+function watchCompact(callback: () => void) {
+  const media = window.matchMedia(panelQuery)
+  media.addEventListener('change', callback)
+  return () => media.removeEventListener('change', callback)
+}
+export function useCompactPanel() {
+  return useSyncExternalStore(
+    watchCompact,
+    () => window.matchMedia(panelQuery).matches,
+    () => false,
+  )
+}
+
 export function Section({
   title,
   children,
   open = false,
   onToggle,
+  category,
 }: {
   title: string
   children: ReactNode
   open?: boolean
   onToggle?: (open: boolean) => void
+  category?: Category
 }) {
+  const active = useContext(PanelContext).category
+  if (active && category && category !== active) return null
   return (
     <details
       className="ip-section"
-      open={open}
+      data-current-category={(category && active === category) || undefined}
+      open={category && active === category ? true : open}
       onToggle={
         onToggle
           ? (e) => {
@@ -70,7 +117,10 @@ export function Numeric({
   onChange,
   onPreview,
 }: NumericProps) {
+  const { lang, category } = useContext(PanelContext)
+  const t = translator(lang)
   const id = useId()
+  const gesture = useRef<{ id: number; x: number; y: number; axis: 'x' | 'y' | null } | null>(null)
   const [draft, setDraft] = useState<string | null>(null)
   const original = useRef<number | null>(null)
   const transient = (raw: string) => {
@@ -93,45 +143,115 @@ export function Numeric({
     if (number !== start) onChange(number)
     else onPreview?.(start)
   }
+  const quantize = (n: number) =>
+    Math.max(min, Math.min(max, Number((min + Math.round((n - min) / step) * step).toPrecision(12))))
+  const bump = (sign: 1 | -1) => onChange(quantize(value + sign * step))
+  const pointerValue = (e: React.PointerEvent<HTMLDivElement>) => {
+    const track = e.currentTarget.getBoundingClientRect()
+    const thumbRadius = 12
+    const fraction = Math.max(
+      0,
+      Math.min(1, (e.clientX - track.left - thumbRadius) / Math.max(1, track.width - thumbRadius * 2)),
+    )
+    return String(quantize(min + fraction * (max - min)))
+  }
+  const stopTouch = (cancel: boolean, e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = gesture.current
+    if (!drag || drag.id !== e.pointerId) return
+    gesture.current = null
+    if (cancel || drag.axis === 'y') {
+      finish('', true)
+      return
+    }
+    const raw = pointerValue(e)
+    transient(raw)
+    finish(raw)
+  }
   return (
     <div className="ip-numeric">
       <label htmlFor={id}>{label}</label>
-      <span className="ip-number-box">
-        <input
-          id={id}
-          type="number"
-          min={min}
-          max={max}
-          step={step}
-          value={draft ?? value}
-          onChange={(e) => transient(e.target.value)}
-          onBlur={(e) => finish(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              finish('', true)
-              e.currentTarget.blur()
-            }
-          }}
-        />
-        {unit && <small>{unit}</small>}
+      <span className="ip-stepper">
+        {category && (
+          <button
+            type="button"
+            className="ip-step"
+            aria-label={label + ' ' + t('decrease', 'を減らす')}
+            disabled={value <= min}
+            onClick={() => bump(-1)}
+          >
+            −
+          </button>
+        )}
+        <span className="ip-number-box">
+          <input
+            id={id}
+            type="number"
+            inputMode={min < 0 ? 'text' : step === 1 ? 'numeric' : 'decimal'}
+            enterKeyHint="done"
+            min={min}
+            max={max}
+            step={step}
+            value={draft ?? value}
+            onChange={(e) => transient(e.target.value)}
+            onBlur={(e) => finish(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'Escape') {
+                finish('', true)
+                e.currentTarget.blur()
+              }
+            }}
+          />
+          {unit && <small>{unit}</small>}
+        </span>
+        {category && (
+          <button
+            type="button"
+            className="ip-step"
+            aria-label={label + ' ' + t('increase', 'を増やす')}
+            disabled={value >= max}
+            onClick={() => bump(1)}
+          >
+            +
+          </button>
+        )}
       </span>
       {slider && (
-        <input
-          className="ip-slider"
-          aria-label={label}
-          type="range"
-          value={Number(draft ?? value)}
-          min={min}
-          max={max}
-          step={step}
-          onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
-          onChange={(e) => transient(e.target.value)}
-          onPointerUp={(e) => finish(e.currentTarget.value)}
-          onPointerCancel={() => finish('', true)}
-          onKeyUp={(e) => finish(e.currentTarget.value)}
-          onBlur={(e) => finish(e.currentTarget.value)}
-        />
+        <div
+          className="ip-slider-area"
+          onPointerDown={(e) => {
+            if (e.target !== e.currentTarget || !e.isPrimary || e.button !== 0) return
+            gesture.current = { id: e.pointerId, x: e.clientX, y: e.clientY, axis: null }
+            e.currentTarget.setPointerCapture(e.pointerId)
+          }}
+          onPointerMove={(e) => {
+            const drag = gesture.current
+            if (!drag || e.pointerId !== drag.id) return
+            const dx = Math.abs(e.clientX - drag.x),
+              dy = Math.abs(e.clientY - drag.y)
+            if (!drag.axis && Math.max(dx, dy) > 7) drag.axis = dx > dy ? 'x' : 'y'
+            if (drag.axis === 'x') transient(pointerValue(e))
+          }}
+          onPointerUp={(e) => stopTouch(false, e)}
+          onPointerCancel={(e) => stopTouch(true, e)}
+          onLostPointerCapture={(e) => stopTouch(true, e)}
+        >
+          <input
+            className="ip-slider"
+            aria-label={label}
+            type="range"
+            value={Number(draft ?? value)}
+            min={min}
+            max={max}
+            step={step}
+            onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)}
+            onChange={(e) => transient(e.target.value)}
+            onPointerUp={(e) => finish(e.currentTarget.value)}
+            onPointerCancel={() => finish('', true)}
+            onKeyUp={(e) => finish(e.currentTarget.value)}
+            onBlur={(e) => finish(e.currentTarget.value)}
+          />
+        </div>
       )}
     </div>
   )
