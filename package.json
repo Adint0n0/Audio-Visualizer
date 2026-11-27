@@ -1,0 +1,42 @@
+{
+  "name": "formant-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/postbuild.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "test:e2e": "npm run build && node scripts/check-browser-suite.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:stress": "node scripts/check-media.mjs --long && node scripts/check-export.mjs --stress"
+  },
+  "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@mediabunny/aac-encoder": "^1.66.5",
+    "@noble/hashes": "^2.4.0",
+    "@zip.js/zip.js": "^2.25.0",
+    "lucide-react": "^1.82.0",
+    "mediabunny": "^1.66.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.11",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "typescript": "5.9",
+    "typescript-eslint": "^8.74.0",
+    "vite": "^7.3.8",
+    "vitest": "^3.2.7"
+  }
+}

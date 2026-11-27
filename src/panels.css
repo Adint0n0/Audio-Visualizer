@@ -1,0 +1,576 @@
+.ly-panel,
+.ip-panel {
+  --panel-line: var(--line, #2b303a);
+  --panel-text: var(--text, #e2e8ef);
+  --panel-muted: var(--muted, #94a0af);
+  --panel-fill: var(--surface, #151a22);
+  --panel-accent: var(--accent, #93f7cd);
+  color: var(--panel-text);
+  min-width: 0;
+  font: inherit;
+}
+.ly-panel *,
+.ip-panel * {
+  box-sizing: border-box;
+}
+.ly-panel button,
+.ip-panel button,
+.ip-file,
+.ly-panel select,
+.ip-panel select,
+.ip-panel input,
+.ip-panel textarea {
+  font: inherit;
+  color: inherit;
+}
+.ly-panel button,
+.ip-panel button,
+.ip-file {
+  background: #20252e;
+  border: 1px solid var(--panel-line);
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 30px;
+}
+.ly-panel button:hover,
+.ip-panel button:hover,
+.ip-file:hover {
+  border-color: #687884;
+  color: #fff;
+}
+.ly-panel button:disabled,
+.ip-panel button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ly-panel :focus-visible,
+.ip-panel :focus-visible,
+.ip-file:focus-within {
+  outline: 2px solid var(--panel-accent);
+  outline-offset: 2px;
+}
+.ip-heading {
+  padding: 15px 15px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.ip-heading h2 {
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: 0.005em;
+  font-weight: 650;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ip-heading h2 > svg {
+  color: var(--panel-muted);
+}
+.ip-count {
+  font:
+    10px 'IBM Plex Mono',
+    monospace;
+  color: var(--panel-muted);
+  background: #242b32;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.ip-inline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ip-inline > button,
+.ip-action,
+.ip-file {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+button.ip-icon-btn {
+  border: 0;
+  background: transparent;
+  min-width: 24px;
+  min-height: 27px;
+  color: var(--panel-muted);
+  padding: 2px;
+}
+.ip-accent {
+  color: var(--panel-accent);
+}
+.ly-list {
+  list-style: none;
+  margin: 0;
+  padding: 1px 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.ly-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  margin-bottom: 3px;
+}
+.ly-row.is-selected {
+  border-color: #3a544d;
+  background: #202e2b;
+}
+.ly-row.is-hidden .ly-select {
+  opacity: 0.55;
+}
+button.ly-select {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 6px 3px;
+  min-height: 42px;
+}
+.ly-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  color: #a2b4ca;
+  background: #272e39;
+}
+.ly-row.is-selected .ly-icon {
+  background: #2c443c;
+  color: var(--panel-accent);
+}
+.ly-info {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.ly-info strong,
+.ly-info small {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.ly-info strong {
+  font-size: 12px;
+  font-weight: 550;
+}
+.ly-info small {
+  font-size: 10px;
+  color: var(--panel-muted);
+}
+.ly-check {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #526064;
+  border-radius: 3px;
+}
+.ly-check.is-on {
+  color: #111c19;
+  background: var(--panel-accent);
+}
+.ly-footer {
+  padding: 7px 12px 14px;
+}
+.ly-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  color: var(--panel-muted) !important;
+  background: transparent !important;
+  border-style: dashed !important;
+}
+.ly-add-options,
+.ly-tools {
+  margin-top: 8px;
+  padding: 7px;
+  border: 1px solid var(--panel-line);
+  border-radius: 5px;
+  display: grid;
+  gap: 6px;
+}
+.ly-add-options {
+  grid-template-columns: 1fr 1fr;
+}
+.ly-tools > .ip-inline {
+  gap: 4px;
+}
+.ly-tools button,
+.ly-tools select {
+  padding: 4px 6px;
+}
+.ip-tabs {
+  margin: 0 14px 9px;
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  padding: 3px;
+  display: flex;
+  background: #0e1219;
+  gap: 3px;
+}
+.ip-tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  min-height: 25px;
+  font-size: 11px;
+  color: var(--panel-muted);
+}
+.ip-tabs button[aria-pressed='true'] {
+  background: #29323a;
+  color: var(--panel-text);
+  box-shadow: 0 1px 3px #0004;
+}
+.ip-layer-caption {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 12px;
+  padding: 11px 15px 8px;
+  overflow-wrap: anywhere;
+}
+.ip-layer-caption strong {
+  font-weight: 600;
+}
+.ip-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--panel-accent);
+}
+.ip-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+.ip-section {
+  border-top: 1px solid var(--panel-line);
+  padding: 0 14px;
+}
+.ip-section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 620;
+  min-height: 40px;
+}
+.ip-section > summary::-webkit-details-marker {
+  display: none;
+}
+.ip-section > summary:after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid #91a0af;
+  border-bottom: 1.5px solid #91a0af;
+  transform: rotate(-45deg);
+  margin: 0 3px;
+}
+.ip-section[open] > summary:after {
+  transform: rotate(45deg) translateY(-2px);
+}
+.ip-section-body {
+  display: grid;
+  gap: 11px;
+  padding: 0 0 15px;
+  min-width: 0;
+}
+.ip-field,
+.ip-numeric {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(68px, 1.32fr);
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--panel-muted);
+  margin: 0;
+}
+.ip-field input:not([type='color']),
+.ip-field select,
+.ip-field textarea,
+.ip-number-box,
+.ly-tools select,
+.ip-section-body select {
+  border: 1px solid var(--panel-line);
+  border-radius: 4px;
+  background: #0e1319;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--panel-text);
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  color-scheme: dark;
+}
+.ip-field textarea {
+  resize: vertical;
+}
+.ip-panel input[type='range'] {
+  cursor: pointer;
+  accent-color: var(--panel-accent);
+  width: 100%;
+  grid-column: 1/-1;
+  margin: 0;
+  height: 16px;
+}
+.ip-numeric > .ip-number-box {
+  justify-self: end;
+  width: max-content;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 2px 6px;
+}
+.ip-number-box input {
+  appearance: textfield;
+  background: transparent;
+  border: 0;
+  width: 5.4em;
+  max-width: 100%;
+  color: var(--panel-text);
+  font:
+    11px 'IBM Plex Mono',
+    monospace;
+  text-align: right;
+  padding: 3px 0;
+  min-width: 0;
+}
+.ip-number-box input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.ip-number-box small {
+  margin-left: 3px;
+  color: var(--panel-muted);
+  font-size: 10px;
+}
+.ip-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.ip-toggle input {
+  margin: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--panel-accent);
+}
+.ip-vector {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ip-vector legend {
+  color: var(--panel-muted);
+  font-size: 11px;
+  margin: 0 0 5px;
+}
+.ip-vector > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.ip-vector .ip-numeric {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+.ip-vector .ip-number-box {
+  padding: 1px 3px;
+  min-height: 25px;
+  flex: 1;
+}
+.ip-vector label {
+  font-size: 10px;
+}
+.ip-vector .ip-number-box input {
+  width: 100%;
+}
+.ip-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--panel-line);
+  border-radius: 4px;
+  background: #10151c;
+  padding: 3px 5px;
+  min-width: 0;
+}
+.ip-color small {
+  font:
+    10px 'IBM Plex Mono',
+    monospace;
+  color: var(--panel-text);
+}
+.ip-color input {
+  min-width: 20px;
+  width: 24px;
+  height: 20px;
+  cursor: pointer;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.ip-color input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.ip-color input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 3px;
+}
+.ip-gradient {
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+}
+.ip-stops {
+  display: grid;
+  gap: 5px;
+  align-items: center;
+}
+.ip-stops > button {
+  justify-self: end;
+}
+.ip-file {
+  position: relative;
+  padding: 6px 8px;
+  flex: 1;
+  overflow: hidden;
+}
+.ip-file input {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.ip-error {
+  font-size: 11px;
+  color: #ffaf9e;
+}
+.ip-help {
+  font-size: 11px;
+  color: var(--panel-muted);
+}
+.ip-binding {
+  display: grid;
+  gap: 9px;
+  border-left: 2px solid #557c6e;
+  padding-left: 8px;
+}
+.ip-end {
+  justify-content: flex-end;
+}
+.ip-action {
+  padding: 5px 9px;
+}
+@media (pointer: coarse) {
+  .ly-panel button,
+  .ip-panel button,
+  .ip-file,
+  .ip-toggle,
+  .ip-section > summary,
+  .ip-field select,
+  .ip-numeric input[type='number'],
+  .ip-field input[type='text'] {
+    min-height: 44px;
+  }
+  .ly-panel button.ip-icon-btn {
+    min-width: 38px;
+  }
+}
+.ip-path-edit {
+  display: grid;
+  gap: 6px;
+}
+.ip-path-edit > svg {
+  width: 100%;
+  height: 155px;
+  touch-action: none;
+  background-color: #10151c;
+  border: 1px solid var(--panel-line);
+  border-radius: 5px;
+  color: var(--panel-accent);
+  background-image:
+    linear-gradient(#ffffff09 1px, transparent 1px), linear-gradient(90deg, #ffffff09 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.ip-path-edit > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--panel-muted);
+  font-size: 11px;
+}
+.ip-path-edit > label select {
+  width: auto;
+}
+.ip-path-edit g {
+  cursor: grab;
+}
+.ip-path-edit g:active {
+  cursor: grabbing;
+}
+.ip-fields {
+  border: 0;
+  margin: 0;
+  padding: 0 0 12px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ip-fields label {
+  display: grid;
+  align-items: center;
+  gap: 5px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  font-size: 11px;
+  color: var(--panel-muted);
+}
+.ip-fields select,
+.ip-fields input {
+  width: 100%;
+  min-width: 0;
+  color-scheme: dark;
+  background: #10151c;
+  color: var(--panel-text);
+  border: 1px solid var(--panel-line);
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 4px 5px;
+}
+.ip-meter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--panel-muted);
+  font-size: 11px;
+}
+.ip-meter meter {
+  width: 60%;
+  height: 12px;
+}
