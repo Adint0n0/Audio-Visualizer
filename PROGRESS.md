@@ -34,3 +34,9 @@
 再開時は `npm ci` の後に `npm run lint`、`npm test`、`npm run test:e2e` を実行します。長尺の検査は `npm run test:stress` で再現できます。最終結果は実コマンドの終了ステータスで判断してください。現状の要件表、実装仕様とブラウザ別の範囲は以下にまとめています。
 
 [要件対応表](docs/REQUIREMENTS.md) · [形式とブラウザの対応範囲](docs/COMPATIBILITY.md) · [エンコードの詳細](docs/EXPORT.md)
+
+## リリース検査と PR 再開
+
+実装コミット `a708a4d` を `feat/local-visualizer-studio` に push し、GitHub のリモート参照を照合しました。型チェック・lint・単体テスト 32 件、11 本のブラウザ検査を含む `npm run test:e2e` が成功しました。このコミットを別ディレクトリへ展開し、ロックファイルからの `npm ci`、本番ビルド、`npm run test:stress` も再実行しました。
+
+PR 作成時に、クラウド環境の許可リストにない `api.github.com/graphql` への要求が Forbidden で拒否されました。再開時は既存 PR の有無を確認し、作業ブランチから `main` への PR を作成してください。公開状態は連携済み Cloudflare Pages のデプロイ結果で確認します。[GitHub の PR 作成画面](https://github.com/Adint0n0/Audio-Visualizer/pull/new/feat/local-visualizer-studio)
