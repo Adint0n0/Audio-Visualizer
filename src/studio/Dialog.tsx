@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 export function Dialog({
   title,
@@ -13,6 +13,7 @@ export function Dialog({
   wide?: boolean
   lang?: string
 }) {
+  const titleId = useId()
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -22,6 +23,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       className={'dialog ' + (wide ? 'wide' : '')}
       onCancel={close}
       onClick={(e) => {
@@ -30,7 +32,7 @@ export function Dialog({
     >
       <div className="dialog-inner">
         <header>
-          <h2>{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button className="icon-btn" onClick={close} aria-label={lang === 'ja' ? '閉じる' : 'Close'}>
             <X size={18} />
           </button>

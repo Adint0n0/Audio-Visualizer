@@ -9,51 +9,62 @@
     <script type="module">
       import { templates } from '../src/templates'
       import { parseProject } from '../src/model'
+      import { defaultAnalysis, FeatureBuilder, readFrame, silentFrame } from '../src/analysis'
+      import { makeMusicFixture } from './fixtures/rhythm'
       import { SceneRenderer } from '../src/scene'
       const canvas = document.getElementById('scene')
       const scene = new SceneRenderer(canvas)
       const gl = scene.renderer.getContext()
-      const wave = Float32Array.from(
-        { length: 128 },
-        (_, i) => 0.53 * Math.sin(i / 11) + 0.29 * Math.cos(i / 3.5),
-      )
-      const right = Float32Array.from({ length: 128 }, (_, i) => 0.73 * Math.cos(i / 7.1))
-      const history = (ago) =>
-        Float32Array.from(
-          { length: 96 },
-          (_, i) =>
-            0.12 +
-            0.7 * (1 - i / 120) * Math.abs(Math.sin(i * 0.11 + ago * 4) * Math.cos(i * 0.039 - ago * 1.8)),
-        )
-      const audio = {
-        bands: history(0),
-        wave,
-        left: wave,
-        right,
-        rms: 0.37,
-        peak: 0.82,
-        onset: 0.14,
-        history,
+      const inputs = new Map()
+      const projects = new Map()
+      function sourceFrame(genre) {
+        if (genre === 'silence') return () => silentFrame
+        if (!inputs.has(genre)) {
+          const { left, right, rate, duration } = makeMusicFixture(genre, 6)
+          const builder = new FeatureBuilder(rate, duration, defaultAnalysis)
+          builder.push(0, left, right)
+          inputs.set(genre, builder.finish())
+        }
+        return (t) => readFrame(inputs.get(genre), t)
       }
       window.ids = templates.map((t) => t.id)
-      window.renderTemplate = (id, w, h, save) => {
-        const project = parseProject(JSON.parse(JSON.stringify(templates.find((t) => t.id === id).create())))
+      window.renderTemplate = (id, w, h, save, music = 'dance', time = 2.39, colorway = 'original') => {
+        const key = id + '/' + colorway
+        if (!projects.has(key)) {
+          const template = templates.find((t) => t.id === id)
+          projects.set(key, parseProject(JSON.parse(JSON.stringify(template.create(colorway)))))
+        }
+        const project = projects.get(key)
+        const frameAt = sourceFrame(music)
         scene.resize(w, h)
-        scene.render(project, 1.35, audio)
+        scene.render(project, time, frameAt(time), { frameAt })
         const pixels = new Uint8Array(w * h * 4)
         gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
         if (gl.getError() !== gl.NO_ERROR) throw Error('WebGL error in ' + id)
-        let luminanceVariation = 0,
-          brightPixels = 0
-        for (let p = 4; p < pixels.length; p += 4) {
-          const delta = Math.max(...[0, 1, 2].map((i) => Math.abs(pixels[i] - pixels[p + i])))
-          luminanceVariation = Math.max(luminanceVariation, delta)
-          if (delta > 8) brightPixels++
+        const bg = [1, 3, 5].map((i) => parseInt(project.background.color.slice(i, i + 2), 16))
+        let brightPixels = 0,
+          lumMax = 0,
+          clipped = 0,
+          intensity = 0,
+          hash = 0x811c9dc5
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i],
+            g = pixels[i + 1],
+            b = pixels[i + 2]
+          const delta = Math.max(Math.abs(r - bg[0]), Math.abs(g - bg[1]), Math.abs(b - bg[2]))
+          if (delta > 10) brightPixels++
+          if (r > 250 && g > 250 && b > 250) clipped++
+          intensity += (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+          lumMax = Math.max(lumMax, delta)
+          hash = Math.imul((hash ^ ((r << 16) | (g << 8) | b)) >>> 0, 16777619)
         }
         return {
-          luminanceVariation,
+          luminanceVariation: lumMax,
           brightPixels,
-          uri: save ? canvas.toDataURL('image/webp', 0.9) : null,
+          clipped: clipped / (w * h),
+          mean: intensity / (w * h),
+          hash: hash >>> 0,
+          uri: save ? canvas.toDataURL('image/webp', 0.92) : null,
         }
       }
       window.finishRenderer = () => scene.dispose()

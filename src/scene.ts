@@ -1,5 +1,6 @@
 import * as T from 'three'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
+import type { Point, Rect, Projection } from './studio/transform'
 import type { AudioFrame } from './analysis'
 import {
   evaluateLayer,
@@ -21,6 +22,7 @@ export interface RenderAssets {
   background?: CanvasImageSource | null
   images?: ReadonlyMap<string, CanvasImageSource>
   frameAt?: (time: number) => AudioFrame
+  previewLod?: number
 }
 type Mode = 'translate' | 'rotate' | 'scale'
 type Field = 'position' | 'rotation' | 'scale'
@@ -145,6 +147,156 @@ export class SceneRenderer {
       this.height = h
     }
   }
+  private interactionNode(id: string) {
+    const node = this.nodes.get(id)
+    if (!node || this.lost || this.disposed) return null
+    let root: T.Object3D = node.root
+    while (root.parent) {
+      if (!root.visible) return null
+      root = root.parent
+    }
+    return { node, camera: root === this.overlay ? this.fixed : this.camera, scene: root }
+  }
+  private projectPoint(v: T.Vector3, camera: T.Camera, rect: DOMRect): Point {
+    const p = v.clone().project(camera)
+    return { x: rect.left + ((p.x + 1) * rect.width) / 2, y: rect.top + ((1 - p.y) * rect.height) / 2 }
+  }
+  private visitBounds(root: T.Object3D, visit: (point: T.Vector3) => void) {
+    const box = new T.Box3(),
+      corner = new T.Vector3()
+    for (const node of this.nodes.values()) {
+      let ancestor: T.Object3D | null = node.content
+      while (ancestor && ancestor.visible && ancestor !== root) ancestor = ancestor.parent
+      if (ancestor !== root || !node.root.visible) continue
+      if (node.visual.bounds) {
+        node.visual.bounds(visit)
+        continue
+      }
+      // Inspect geometry local to this layer; group descendants are visited independently.
+      node.visual.object.traverseVisible((object) => {
+        if (!(object instanceof T.Mesh || object instanceof T.Line)) return
+        const geometry = object.geometry
+        const attr = geometry.getAttribute('position')
+        if (attr && geometry.userData.boundsRevision !== attr.version) {
+          geometry.computeBoundingBox()
+          geometry.userData.boundsRevision = attr.version
+        }
+        if (object instanceof T.InstancedMesh) {
+          if (!object.boundingBox || object.userData.boundsRevision !== object.instanceMatrix.version) {
+            object.computeBoundingBox()
+            object.userData.boundsRevision = object.instanceMatrix.version
+          }
+          if (!object.boundingBox) return
+          box.copy(object.boundingBox)
+        } else {
+          if (!geometry.boundingBox) geometry.computeBoundingBox()
+          if (!geometry.boundingBox) return
+          box.copy(geometry.boundingBox)
+        }
+        if (box.isEmpty()) return
+        for (const x of [box.min.x, box.max.x])
+          for (const y of [box.min.y, box.max.y])
+            for (const z of [box.min.z, box.max.z]) {
+              visit(corner.set(x, y, z).applyMatrix4(object.matrixWorld))
+            }
+      })
+    }
+  }
+  private projectedBounds(node: Node, camera: T.Camera, rect: DOMRect): Rect {
+    const pivot = node.root.getWorldPosition(new T.Vector3())
+    const center = this.projectPoint(pivot, camera, rect)
+    const bounds: Rect = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity }
+    const ndc = new T.Vector3(),
+      eye = camera.getWorldPosition(new T.Vector3()),
+      direction = camera.getWorldDirection(new T.Vector3())
+    this.visitBounds(node.content, (vertex) => {
+      if (ndc.copy(vertex).sub(eye).dot(direction) <= 0.01) return
+      ndc.copy(vertex).project(camera)
+      const x = rect.left + ((ndc.x + 1) * rect.width) / 2,
+        y = rect.top + ((1 - ndc.y) * rect.height) / 2
+      bounds.left = Math.min(bounds.left, x)
+      bounds.right = Math.max(bounds.right, x)
+      bounds.top = Math.min(bounds.top, y)
+      bounds.bottom = Math.max(bounds.bottom, y)
+    })
+    if (!Number.isFinite(bounds.left))
+      return { left: center.x, right: center.x, top: center.y, bottom: center.y }
+    return bounds
+  }
+  selectionBounds(id: string) {
+    const ref = this.interactionNode(id)
+    return ref ? this.projectedBounds(ref.node, ref.camera, this.canvas.getBoundingClientRect()) : null
+  }
+  manipulation(id: string): Projection | null {
+    const ref = this.interactionNode(id)
+    if (!ref) return null
+    const { node, camera, scene } = ref
+    const rect = this.canvas.getBoundingClientRect()
+    const world = node.root.getWorldPosition(new T.Vector3())
+    const ndc = world.clone().project(camera)
+    const snapshot = camera.clone()
+    const inverse = node.root.parent!.matrixWorld.clone().invert()
+    const matrix = node.root.parent!.matrixWorld.clone()
+    return {
+      world,
+      center: this.projectPoint(world, camera, rect),
+      origin: rect,
+      parent: node.root.parent!.getWorldQuaternion(new T.Quaternion()),
+      camera: camera.getWorldQuaternion(new T.Quaternion()),
+      bounds: this.projectedBounds(node, camera, rect),
+      neighbors: [...this.nodes.keys()]
+        .filter((key) => key !== id)
+        .flatMap((key) => {
+          const item = this.interactionNode(key)
+          return item?.scene === scene && this.project?.layers.find((l) => l.id === key)?.kind !== 'group'
+            ? [this.projectedBounds(item.node, camera, rect)]
+            : []
+        }),
+      toLocal: (p) =>
+        new T.Vector3(
+          (2 * (p.x - rect.left)) / rect.width - 1,
+          1 - (2 * (p.y - rect.top)) / rect.height,
+          ndc.z,
+        )
+          .unproject(snapshot)
+          .applyMatrix4(inverse),
+      toScreen: (p) => this.projectPoint(p.clone().applyMatrix4(matrix), snapshot, rect),
+      worldFromLocal: (p) => p.clone().applyMatrix4(matrix),
+      localFromWorld: (p) => p.clone().applyMatrix4(inverse),
+      fixed: scene === this.overlay,
+    }
+  }
+  focusBounds(id?: string) {
+    const object = id ? this.interactionNode(id)?.node.content : this.world
+    if (!object) return null
+    const box = new T.Box3()
+    this.visitBounds(object, (point) => box.expandByPoint(point))
+    if (box.isEmpty()) return null
+    const center = box.getCenter(new T.Vector3())
+    let radiusSq = 0
+    this.visitBounds(object, (point) => {
+      radiusSq = Math.max(radiusSq, point.distanceToSquared(center))
+    })
+    return { center: center.toArray() as Vec3, radius: Math.sqrt(radiusSq) }
+  }
+  pickNear(x: number, y: number, slop: number) {
+    const direct = this.pick(x, y)
+    if (direct || !slop) return direct
+    for (const [dx, dy] of [
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+      [0, -1],
+      [0.7, 0.7],
+      [0.7, -0.7],
+      [-0.7, 0.7],
+      [-0.7, -0.7],
+    ]) {
+      const near = this.pick(x + dx * slop, y + dy * slop)
+      if (near) return near
+    }
+    return null
+  }
   /** Hit-test the rendered layer geometry in CSS viewport coordinates. */
   pick(clientX: number, clientY: number): string | null {
     const rect = this.canvas.getBoundingClientRect()
@@ -171,7 +323,8 @@ export class SceneRenderer {
         if (parent !== scene) continue
         const objects: T.Object3D[] = []
         node.visual.object.traverseVisible((object) => {
-          if (object instanceof T.Mesh || object instanceof T.Line) {
+          if (object.userData.skipRaycast) return
+          if (object instanceof T.Mesh || object instanceof T.Line || object instanceof T.Points) {
             // Vertex and instance transforms may have moved since the previous pick.
             object.geometry.computeBoundingSphere()
             if (object instanceof T.InstancedMesh) object.computeBoundingSphere()
@@ -321,6 +474,21 @@ export class SceneRenderer {
     if (this.lost || this.renderer.getContext().isContextLost()) throw Error('WebGL context lost')
     this.project = project
     const evaluated = evaluateScene(project, time, audio)
+    const lod = Math.max(0.4, Math.min(1, assets.previewLod ?? 1))
+    const level = lod >= 0.8 ? 1 : lod >= 0.58 ? 0.7 : 0.5
+    const preview = (layer: Layer): Layer => {
+      if (layer.kind !== 'visualizer' || level === 1) return layer
+      const s = layer.settings
+      const density = (n: number, floor: number) => Math.min(n, Math.max(floor, Math.round(n * level)))
+      if (layer.style === 'galaxy' || layer.style === 'particles' || layer.style === 'globe')
+        return { ...layer, settings: { ...s, count: density(s.count, 30) } }
+      if (layer.style === 'terrain' || layer.style === 'waterfall' || layer.style === 'spectrogram')
+        return {
+          ...layer,
+          settings: { ...s, columns: density(s.columns, 20), history: density(s.history, 12) },
+        }
+      return layer
+    }
     const keys = new Set(project.layers.map((l) => l.id))
     for (const [id, n] of this.nodes) if (!keys.has(id)) this.removeNode(id, n)
     const currentLayers = evaluated.layers.map((layer) => evaluateLayer(layer, time, audio, evaluated.seed))
@@ -360,7 +528,8 @@ export class SceneRenderer {
       this.renderer.shadowMap.enabled = shadows
       const layers = delay === 0 ? currentLayers : p.layers.map((l) => evaluateLayer(l, t, signal, p.seed))
       const byId = new Map(layers.map((l) => [l.id, l] as const))
-      for (const l of layers) this.ensureNode(l, l.imageId ? assets.images?.get(l.imageId) : undefined)
+      const drawn = layers.map(preview)
+      for (const l of drawn) this.ensureNode(l, l.imageId ? assets.images?.get(l.imageId) : undefined)
       const screen = new Map<string, boolean>()
       const isFixed = (l: Layer): boolean => {
         if (screen.has(l.id)) return screen.get(l.id)!
@@ -370,7 +539,7 @@ export class SceneRenderer {
         screen.set(l.id, result)
         return result
       }
-      layers.forEach((l, i) => {
+      drawn.forEach((l, i) => {
         const n = this.nodes.get(l.id)!,
           parent = l.parentId ? byId.get(l.parentId) : undefined
         const fixed = isFixed(l),
@@ -406,7 +575,7 @@ export class SceneRenderer {
         const tex = n.texture.update(map)
         n.visual.object.traverse((o) => {
           o.renderOrder = i * 4 + (o instanceof T.LineSegments ? 1 : 0)
-          if (o instanceof T.Mesh || o instanceof T.Line) {
+          if (o instanceof T.Mesh || o instanceof T.Line || o instanceof T.Points) {
             for (const material of Array.isArray(o.material) ? o.material : [o.material]) {
               const restore = setPassGain(material, pass, l.effects)
               if (restore) restoreBlends.push(restore)
@@ -470,7 +639,14 @@ export class SceneRenderer {
       layerEffects.trail
     ) {
       this.fx ??= new Effects()
-      this.fx.render(this.renderer, this.width, this.height, evaluated.effects, layerEffects, draw)
+      this.fx.render(
+        this.renderer,
+        this.width,
+        this.height,
+        level === 0.5 ? { ...evaluated.effects, trail: 0 } : evaluated.effects,
+        level === 0.5 ? { ...layerEffects, trail: false } : layerEffects,
+        draw,
+      )
     } else {
       if (this.fx) {
         this.fx.dispose()

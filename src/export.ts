@@ -14,7 +14,7 @@ import {
   type InputAudioTrack,
   type Target,
 } from 'mediabunny'
-import { prepareAudio, createAudioWriter, type AudioMode } from './output/audio'
+import { prepareAudio, enablePortableAac, createAudioWriter, type AudioMode } from './output/audio'
 import { estimateBytes, frameCount, validateExport, type ExportOptions } from './output/timing'
 import { openExportStorage } from './output/storage'
 
@@ -58,12 +58,35 @@ function makePipeline(
   return { output, video, audio }
 }
 
+type ProbeResult = { supported: boolean; audioMode: AudioMode; audioCodec?: string; reason?: string }
+
 export async function probeExport(
-  o: ExportOptions,
+  options: ExportOptions,
   track: InputAudioTrack | null,
   origin = 0,
   signal?: AbortSignal,
-): Promise<{ supported: boolean; audioMode: AudioMode; audioCodec?: string; reason?: string }> {
+): Promise<ProbeResult> {
+  const result = await testEncoder(options, track, origin, signal)
+  if (!result.lateAac) return result
+  try {
+    signal?.throwIfAborted()
+    await enablePortableAac()
+    return await testEncoder(options, track, origin, signal)
+  } catch (error) {
+    return {
+      supported: false,
+      audioMode: 'encode',
+      reason: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+async function testEncoder(
+  o: ExportOptions,
+  track: InputAudioTrack | null,
+  origin: number,
+  signal?: AbortSignal,
+): Promise<ProbeResult & { lateAac?: boolean }> {
   let mode: AudioMode = track ? 'encode' : 'silent'
   let output: Output | undefined
   let trialCanvas: HTMLCanvasElement | undefined
@@ -125,6 +148,16 @@ export async function probeExport(
           !(await new EncodedPacketSink(audio).getFirstPacket({ metadataOnly: true }))
         ) {
           throw new Error('Audio trial produced no valid packet / 試験音声パケットを検出できません')
+        }
+        // The trial feeds PCM at exactly t=0. Some native AAC configurations
+        // emit a positive start offset despite passing isConfigSupported().
+        if (plan.mode === 'encode' && (await audio.getFirstTimestamp()) > 2 / plan.sampleRate) {
+          return {
+            supported: false,
+            audioMode: mode,
+            lateAac: plan.codec === 'aac',
+            reason: 'Audio encoder shifted the timeline / 音声エンコーダーが開始時刻をずらしました',
+          }
         }
       }
     } finally {

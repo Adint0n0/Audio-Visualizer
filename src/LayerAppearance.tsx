@@ -26,7 +26,16 @@ const styleFields: Record<Style, readonly NumericSetting[]> = {
   tunnel: ['radius', 'depth', 'rows', 'lineWidth', 'startAngle', 'speed', 'baseline'],
   particles: ['lifetime', 'speed', 'gravity', 'spread', 'width', 'radius', 'maxHeight', 'baseline'],
   prism: ['radius', 'speed'],
+  galaxy: ['radius', 'spread', 'speed'],
+  radial: ['radius', 'width', 'maxHeight', 'speed'],
+  diodes: ['rows', 'columns', 'width', 'spacing', 'depth', 'baseline'],
+  globe: ['radius', 'maxHeight', 'speed'],
 }
+const emissiveStyles: readonly Style[] = ['prism', 'galaxy', 'radial', 'diodes', 'globe']
+const shaderOnly: readonly Style[] = ['galaxy', 'radial', 'diodes', 'globe']
+const hasSurfaceMaterial = (layer: Layer) =>
+  layer.kind !== 'visualizer' || !emissiveStyles.includes(layer.style)
+
 const unitFor: Partial<Record<NumericSetting, string>> = {
   lifetime: 's',
   startAngle: '°',
@@ -77,7 +86,7 @@ export function layerModTargets(l: Layer) {
     if (target.startsWith('material.')) {
       return (
         l.kind !== 'group' &&
-        (target === 'material.hue' || (l.style !== 'prism' && l.material.shading !== 'unlit'))
+        (target === 'material.hue' || (hasSurfaceMaterial(l) && l.material.shading !== 'unlit'))
       )
     }
     return true
@@ -104,7 +113,13 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
       <BoundNumber
         key={key}
         field={key}
-        label={key === 'gain' ? t('Sensitivity', '感度') : fmt(key === 'arc' ? 'arcAngle' : key)}
+        label={
+          key === 'count' && l.style === 'galaxy'
+            ? t('Star density', '星の密度')
+            : key === 'gain'
+              ? t('Sensitivity', '感度')
+              : fmt(key === 'arc' ? 'arcAngle' : key)
+        }
         value={settings[key]}
         slider={slider}
         step={['count', 'rows', 'columns', 'history'].includes(key) ? 1 : 0.01}
@@ -113,9 +128,13 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
           ? { max: settings.maxHeight }
           : key === 'maxHeight'
             ? { min: settings.minHeight }
-            : key === 'count' && l.style === 'prism'
-              ? { min: 8, max: 160 }
-              : {})}
+            : key === 'count' && l.style === 'galaxy'
+              ? { min: 22 }
+              : key === 'count' && l.style === 'radial'
+                ? { min: 24 }
+                : key === 'count' && l.style === 'prism'
+                  ? { min: 8, max: 160 }
+                  : {})}
         onChange={(v) => update({ [key]: v })}
         onPreview={preview && ((v) => preview({ settings: { ...settings, [key]: v } }))}
       />
@@ -123,7 +142,7 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
   }
   return (
     <>
-      <Section title={t('Visualizer', 'ビジュアライザー')} open>
+      <Section category="visual" title={t('Visualizer', 'ビジュアライザー')} open>
         <Choice
           label={t('Style', 'スタイル')}
           value={l.style}
@@ -154,11 +173,12 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
             onChange={(shape) => patch({ shape })}
           />
         )}
-        {!['led', 'spectrogram', 'waterfall', 'terrain'].includes(l.style) && numberField('count', true)}
+        {!['led', 'diodes', 'spectrogram', 'waterfall', 'terrain'].includes(l.style) &&
+          numberField('count', true)}
         {numberField('gain', true)}
       </Section>
       {l.style === 'spectrum' && l.layout === 'path' && (
-        <Section title={t('Custom path', 'カスタムパス')} open>
+        <Section category="path" title={t('Custom path', 'カスタムパス')} open>
           <Line
             label={t('Path data (SVG d)', 'パスデータ（SVG d）')}
             value={settings.path}
@@ -201,11 +221,7 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
               {pathError}
             </small>
           )}
-          <Toggle
-            label={fmt('closed')}
-            value={settings.closed}
-            onChange={(closed) => update({ closed })}
-          />
+          <Toggle label={fmt('closed')} value={settings.closed} onChange={(closed) => update({ closed })} />
           <Toggle
             label={fmt('tangent')}
             value={settings.tangent}
@@ -214,26 +230,20 @@ export function ShapeProperties({ layer: l, patch, preview, lang, advanced }: Ap
         </Section>
       )}
       {advanced && (
-        <Section title={t('Geometry', 'ジオメトリ')}>
+        <Section category="geometry" title={t('Geometry', 'ジオメトリ')}>
           {Array.from(fields).map((key) => numberField(key))}
-          {!['spectrogram', 'waterfall', 'terrain'].includes(l.style) && (
+          {!['spectrogram', 'waterfall', 'terrain', 'galaxy', 'globe', 'radial'].includes(l.style) && (
+            <Toggle label={fmt('mirror')} value={settings.mirror} onChange={(mirror) => update({ mirror })} />
+          )}
+          {!['galaxy', 'globe', 'radial'].includes(l.style) && (
             <Toggle
-              label={fmt('mirror')}
-              value={settings.mirror}
-              onChange={(mirror) => update({ mirror })}
+              label={fmt('reverse')}
+              value={settings.reverse}
+              onChange={(reverse) => update({ reverse })}
             />
           )}
-          <Toggle
-            label={fmt('reverse')}
-            value={settings.reverse}
-            onChange={(reverse) => update({ reverse })}
-          />
           {l.style === 'spectrum' && (orbit || l.layout === 'sphere') && (
-            <Toggle
-              label={fmt('inward')}
-              value={settings.inward}
-              onChange={(inward) => update({ inward })}
-            />
+            <Toggle label={fmt('inward')} value={settings.inward} onChange={(inward) => update({ inward })} />
           )}
           {l.style === 'spectrum' && orbit && (
             <Toggle
@@ -274,7 +284,7 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
     })
   }
   return (
-    <Section title={t('Appearance', '外観')} open>
+    <Section category="appearance" title={t('Appearance', '外観')} open>
       {l.kind === 'visualizer' && (
         <Choice
           label={t('Color mapping', '配色')}
@@ -284,7 +294,7 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
           onChange={(colorMode) => edit({ colorMode })}
         />
       )}
-      {(!gradient || (advanced && m.shading !== 'unlit' && l.style !== 'prism')) && (
+      {(!gradient || (advanced && m.shading !== 'unlit' && hasSurfaceMaterial(l))) && (
         <Color
           label={gradient ? t('Emission color', '発光色') : fmt('color')}
           value={m.color}
@@ -348,7 +358,7 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
       />
       {advanced && (
         <>
-          {l.style !== 'prism' && (
+          {hasSurfaceMaterial(l) && (
             <Choice
               label={t('Shading', 'シェーディング')}
               value={m.shading}
@@ -362,9 +372,7 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
               key={key}
               field={key}
               label={
-                key === 'bloom'
-                  ? t('Layer bloom', 'レイヤーのブルーム')
-                  : t('Layer trails', 'レイヤーの残像')
+                key === 'bloom' ? t('Layer bloom', 'レイヤーのブルーム') : t('Layer trails', 'レイヤーの残像')
               }
               value={l.effects[key]}
               slider
@@ -378,7 +386,7 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
             format={fmt}
             onChange={(blend) => edit({ blend })}
           />
-          {l.style !== 'prism' &&
+          {hasSurfaceMaterial(l) &&
             m.shading !== 'unlit' &&
             (['metalness', 'roughness', 'emission'] as const).map((key) => (
               <BoundNumber
@@ -390,21 +398,17 @@ export function Appearance({ layer: l, patch, lang, advanced, onAsset }: Appeara
                 onChange={(v) => edit({ [key]: v })}
               />
             ))}
-          {l.kind === 'visualizer' && (
+          {l.kind === 'visualizer' && !shaderOnly.includes(l.style) && (
             <Toggle
               label={t('Wireframe', 'ワイヤーフレーム')}
               value={m.wireframe}
               onChange={(wireframe) => edit({ wireframe })}
             />
           )}
-          {l.style !== 'prism' && (
-            <Toggle
-              label={t('Shadows', '影')}
-              value={m.shadow}
-              onChange={(shadow) => edit({ shadow })}
-            />
+          {hasSurfaceMaterial(l) && (
+            <Toggle label={t('Shadows', '影')} value={m.shadow} onChange={(shadow) => edit({ shadow })} />
           )}
-          {l.kind === 'visualizer' && l.style !== 'prism' && onAsset && (
+          {l.kind === 'visualizer' && hasSurfaceMaterial(l) && onAsset && (
             <AssetInput
               lang={lang}
               label={t('Choose texture', 'テクスチャを選択')}

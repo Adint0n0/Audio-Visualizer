@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronDown, Heart, Search, X, Plus, Replace, SlidersHorizontal } from 'lucide-react'
-import { templates, categories, type Category } from '../templates'
+import {
+  templates,
+  categories,
+  colorways,
+  families,
+  featuredIds,
+  type Category,
+  type Colorway,
+} from '../templates'
 import { Dialog } from './Dialog'
+import { TemplatePreview } from './TemplatePreview'
 import type { Lang } from './hooks'
 export type SceneTemplate = (typeof templates)[number]
 export function thumb(id: string) {
@@ -14,7 +23,7 @@ export function Library({
 }: {
   lang: Lang
   active: string
-  apply: (item: SceneTemplate, append: boolean) => void
+  apply: (item: SceneTemplate, append: boolean, colorway?: Colorway) => void
 }) {
   const ja = lang === 'ja'
   const [query, setQuery] = useState(''),
@@ -29,30 +38,37 @@ export function Library({
     }),
     [onlyStars, setOnlyStars] = useState(false),
     [preview, setPreview] = useState<SceneTemplate | null>(null)
+  const [mood, setMood] = useState('all'),
+    [cost, setCost] = useState('all'),
+    [family, setFamily] = useState('all'),
+    [space, setSpace] = useState('all')
+  const [showFilters, setShowFilters] = useState(false)
+  const [colorway, setColorway] = useState<Colorway>('original')
+  const previewProject = useMemo(() => preview?.create(colorway), [preview, colorway])
   const groups = [...new Set(templates.map((t) => t.category))]
   const displayCategory = (c: Category) => categories[c][lang]
-  const featured = [
-    'prism-current',
-    'afterimage',
-    'fault-lines',
-    'transit-tube',
-    'crystal-organ',
-    'binary-stars',
-    'laser-harp',
-    'block-district',
-  ]
-  const rank = (id: string) => (featured.includes(id) ? featured.indexOf(id) : featured.length)
-  const ordered = [...templates].sort(
-    (a, b) =>
-      rank(a.id) - rank(b.id) ||
-      templates.filter((t) => t.category === a.category).indexOf(a) -
-        templates.filter((t) => t.category === b.category).indexOf(b),
-  )
+  const t = (en: string, jp: string) => (ja ? jp : en)
+  const rank = (id: string) => (featuredIds.includes(id) ? featuredIds.indexOf(id) : featuredIds.length)
+  const ordered = [...templates].sort((a, b) => rank(a.id) - rank(b.id))
   const items = ordered.filter(
-    (t) =>
-      (category === 'all' || category === t.category) &&
-      (!onlyStars || favorites.includes(t.id)) &&
-      (t.name.en + t.name.ja + t.category).toLowerCase().includes(query.toLowerCase()),
+    (item) =>
+      (category === 'all' || category === item.category) &&
+      (family === 'all' || family === item.family) &&
+      (mood === 'all' || mood === item.mood) &&
+      (cost === 'all' || cost === item.cost) &&
+      (space === 'all' || space === item.dimensions) &&
+      (!onlyStars || favorites.includes(item.id)) &&
+      (
+        item.name.en +
+        ' ' +
+        item.name.ja +
+        ' ' +
+        displayCategory(item.category) +
+        ' ' +
+        item.description[lang]
+      )
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
   )
   function toggle(id: string) {
     const next = favorites.includes(id) ? favorites.filter((i) => i !== id) : [...favorites, id]
@@ -67,7 +83,7 @@ export function Library({
     <section className="library">
       <div className="library-heading">
         <h2>{ja ? 'テンプレート' : 'Scene library'}</h2>
-        <span className="count">{templates.length}</span>
+        <span className="count">{items.length}</span>
       </div>
       <label className="search-box">
         <Search size={15} />
@@ -109,10 +125,83 @@ export function Library({
           <Heart size={15} />
         </button>
       </div>
+      <button
+        className="library-filter-toggle btn"
+        aria-expanded={showFilters}
+        onClick={() => setShowFilters(!showFilters)}
+      >
+        <SlidersHorizontal size={15} />
+        {t('Style and performance', 'スタイルと描画負荷')}
+      </button>
+      {showFilters && (
+        <div className="extra-library-filters">
+          <label>
+            {t('Visual family', '表現ファミリー')}
+            <select value={family} onChange={(e) => setFamily(e.target.value)}>
+              <option value="all">{t('All families', 'すべてのファミリー')}</option>
+              {Object.entries(families).map(([id, group]) => (
+                <option key={id} value={id}>
+                  {group[lang]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t('Mood', '雰囲気')}
+            <select value={mood} onChange={(e) => setMood(e.target.value)}>
+              {[
+                ['all', 'All', 'すべて'],
+                ['ambient', 'Ambient', 'アンビエント'],
+                ['rhythmic', 'Electronic', 'エレクトロニック'],
+                ['cinematic', 'Cinematic', 'シネマティック'],
+              ].map(([id, en, jp]) => (
+                <option key={id} value={id}>
+                  {t(en, jp)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t('Space', '次元')}
+            <select value={space} onChange={(e) => setSpace(e.target.value)}>
+              {[
+                ['all', 'All', 'すべて'],
+                ['2d', '2D', '2D'],
+                ['3d', '3D', '3D'],
+              ].map(([id, en, jp]) => (
+                <option key={id} value={id}>
+                  {t(en, jp)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t('Render load', '描画負荷')}
+            <select value={cost} onChange={(e) => setCost(e.target.value)}>
+              {[
+                ['all', 'All', 'すべて'],
+                ['light', 'Light', '軽量'],
+                ['medium', 'Medium', '標準'],
+                ['high', 'High', '高負荷'],
+              ].map(([id, en, jp]) => (
+                <option key={id} value={id}>
+                  {t(en, jp)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       <div className="cards">
         {items.map((t) => (
           <article key={t.id} className={'template-card ' + (active === t.id ? 'active' : '')}>
-            <button className="template-pick" onClick={() => setPreview(t)}>
+            <button
+              className="template-pick"
+              onClick={() => {
+                setPreview(t)
+                setColorway('original')
+              }}
+            >
               <span className="thumb">
                 <img src={thumb(t.id)} loading="lazy" alt="" />
                 {active === t.id && <span className="selected-dot" />}
@@ -133,20 +222,47 @@ export function Library({
       {!items.length && (
         <p className="subtle">{ja ? '一致するテンプレートがありません。' : 'No matching scenes.'}</p>
       )}
-      {preview && (
+      {preview && previewProject && (
         <Dialog title={preview.name[lang]} close={() => setPreview(null)} lang={lang}>
-          <img className="template-sample" src={thumb(preview.id)} alt={preview.name[lang]} />
+          <TemplatePreview
+            project={previewProject}
+            poster={thumb(preview.id)}
+            lang={lang}
+            renderStill={colorway !== 'original'}
+          />
+          <p className="template-description">{preview.description[lang]}</p>
+          <label className="template-colors">
+            {t('Palette', '配色')}{' '}
+            <select value={colorway} onChange={(e) => setColorway(e.target.value as Colorway)}>
+              {preview.colorways.map((id) => (
+                <option value={id} key={id}>
+                  {colorways[id][lang]}
+                </option>
+              ))}
+            </select>
+            <span className="swatches" aria-hidden="true">
+              {(colorway === 'original' ? preview.palette : colorways[colorway].swatches).map((color, i) => (
+                <i key={i} style={{ background: color }} />
+              ))}
+            </span>
+          </label>
           <div className="template-detail">
-            <span>{displayCategory(preview.category)}</span>
+            <span>{families[preview.family][lang]}</span>
             <span>
-              {preview.create().layers.length} {ja ? 'レイヤー' : 'layers'}
+              {previewProject.layers.length} {ja ? 'レイヤー' : 'layers'}
             </span>
           </div>
+          <p className="template-description">
+            {t(
+              'Append keeps your scene. You can undo a replacement.',
+              '追加は現在のシーンを保持します。置換も元に戻せます。',
+            )}
+          </p>
           <div className="dialog-actions">
             <button
               className="btn"
               onClick={() => {
-                apply(preview, true)
+                apply(preview, true, colorway)
                 setPreview(null)
               }}
             >
@@ -156,7 +272,7 @@ export function Library({
             <button
               className="btn primary"
               onClick={() => {
-                apply(preview, false)
+                apply(preview, false, colorway)
                 setPreview(null)
               }}
             >

@@ -1,0 +1,303 @@
+[
+  {
+    "name": "360x640",
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      8,
+      178,
+      366,
+      206
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "360x780",
+    "viewport": [
+      360,
+      780
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      8,
+      248,
+      366,
+      206
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "390x844",
+    "viewport": [
+      390,
+      844
+    ],
+    "pageWidth": 390,
+    "documentScroll": 0,
+    "canvas": [
+      8,
+      278,
+      374,
+      210
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "390x844-inspector",
+    "viewport": [
+      390,
+      844
+    ],
+    "pageWidth": 390,
+    "documentScroll": 0,
+    "canvas": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          141,
+          390,
+          583
+        ],
+        "offset": 0,
+        "max": 205
+      }
+    ]
+  },
+  {
+    "name": "412x915",
+    "viewport": [
+      412,
+      915
+    ],
+    "pageWidth": 412,
+    "documentScroll": 0,
+    "canvas": [
+      8,
+      307,
+      396,
+      223
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "640x360",
+    "viewport": [
+      640,
+      360
+    ],
+    "pageWidth": 640,
+    "documentScroll": 0,
+    "canvas": [
+      265,
+      132,
+      110,
+      62
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "780x360",
+    "viewport": [
+      780,
+      360
+    ],
+    "pageWidth": 780,
+    "documentScroll": 0,
+    "canvas": [
+      335,
+      132,
+      110,
+      62
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "844x390",
+    "viewport": [
+      844,
+      390
+    ],
+    "pageWidth": 844,
+    "documentScroll": 0,
+    "canvas": [
+      340,
+      132,
+      164,
+      92
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "844x390-inspector",
+    "viewport": [
+      844,
+      390
+    ],
+    "pageWidth": 844,
+    "documentScroll": 0,
+    "canvas": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          129,
+          844,
+          144
+        ],
+        "offset": 0,
+        "max": 644
+      }
+    ]
+  },
+  {
+    "name": "915x412",
+    "viewport": [
+      915,
+      412
+    ],
+    "pageWidth": 915,
+    "documentScroll": 0,
+    "canvas": [
+      356,
+      132,
+      203,
+      114
+    ],
+    "scrollAreas": []
+  },
+  {
+    "name": "768x1024",
+    "viewport": [
+      768,
+      1024
+    ],
+    "pageWidth": 768,
+    "documentScroll": 0,
+    "canvas": [
+      219,
+      328,
+      300,
+      169
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          115,
+          204,
+          723
+        ],
+        "offset": 0,
+        "max": 2380
+      },
+      {
+        "className": "dock-scroll",
+        "rect": [
+          534,
+          115,
+          234,
+          723
+        ],
+        "offset": 0,
+        "max": 65
+      }
+    ]
+  },
+  {
+    "name": "1024x768",
+    "viewport": [
+      1024,
+      768
+    ],
+    "pageWidth": 1024,
+    "documentScroll": 0,
+    "canvas": [
+      236,
+      149,
+      525,
+      295
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          115,
+          221,
+          492
+        ],
+        "offset": 0,
+        "max": 2692
+      },
+      {
+        "className": "dock-scroll",
+        "rect": [
+          776,
+          115,
+          248,
+          492
+        ],
+        "offset": 0,
+        "max": 296
+      }
+    ]
+  },
+  {
+    "name": "1440x900",
+    "viewport": [
+      1440,
+      900
+    ],
+    "pageWidth": 1440,
+    "documentScroll": 0,
+    "canvas": [
+      282,
+      132,
+      849,
+      478
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          0,
+          115,
+          267,
+          624
+        ],
+        "offset": 0,
+        "max": 3020
+      },
+      {
+        "className": "dock-scroll",
+        "rect": [
+          1146,
+          115,
+          294,
+          624
+        ],
+        "offset": 0,
+        "max": 35
+      }
+    ]
+  }
+]

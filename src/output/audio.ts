@@ -33,6 +33,12 @@ type Plan =
 const EPSILON = 0.000002
 let registration: Promise<void> | undefined
 
+/** Register the local encoder after native capability or timestamp validation fails. */
+export async function enablePortableAac(): Promise<void> {
+  registration ??= import('@mediabunny/aac-encoder').then((m) => m.registerAacEncoder())
+  await registration
+}
+
 export async function prepareAudio(
   o: ExportOptions,
   track: InputAudioTrack | null,
@@ -73,8 +79,7 @@ export async function prepareAudio(
     channels = await track.getNumberOfChannels()
   const args = { sampleRate, numberOfChannels: channels, bitrate: o.audioBitrate }
   if (wanted === 'aac' && !(await canEncodeAudio(wanted, args))) {
-    registration ??= import('@mediabunny/aac-encoder').then((m) => m.registerAacEncoder())
-    await registration
+    await enablePortableAac()
   }
   if (!(await track.canDecode()) || !(await canEncodeAudio(wanted, args)))
     throw new Error(

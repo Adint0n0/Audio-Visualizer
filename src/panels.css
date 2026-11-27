@@ -333,7 +333,7 @@ button.ly-select {
   margin: 0;
   height: 16px;
 }
-.ip-numeric > .ip-number-box {
+.ip-stepper > .ip-number-box {
   justify-self: end;
   width: max-content;
   max-width: 100%;
@@ -573,4 +573,277 @@ button.ly-select {
 .ip-meter meter {
   width: 60%;
   height: 12px;
+}
+
+.ip-stepper {
+  display: contents;
+}
+.ip-panel button.ip-step {
+  display: none;
+}
+.ip-slider-area {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+}
+.ip-section[data-current-category] > summary {
+  display: none;
+}
+.ip-category {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #1b201e;
+  padding: 4px 14px;
+  border-bottom: 1px solid var(--panel-line);
+  margin: 0 0 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--panel-muted);
+}
+.ip-category select {
+  flex: 1;
+  min-width: 0;
+  max-width: 76%;
+  height: 44px;
+  border: 1px solid var(--panel-line);
+  border-radius: 7px;
+  padding: 0 10px;
+  color: var(--panel-text);
+  background: #171d21;
+  color-scheme: dark;
+}
+
+@media (max-width: 900px), (max-height: 560px) and (pointer: coarse) {
+  .right-dock .dock-scroll {
+    scroll-padding-top: 56px;
+  }
+  /* The enclosing dock owns scrolling, including long layer stacks and lighting controls. */
+  .ly-list,
+  .ip-scroll {
+    overflow: visible;
+    max-height: none;
+    overscroll-behavior: auto;
+  }
+  .ly-panel {
+    display: flex;
+    flex-direction: column;
+  }
+  .ly-footer {
+    order: 1;
+    padding: 4px 14px 8px;
+  }
+  .ly-list {
+    order: 2;
+  }
+  .ip-panel button,
+  .ly-panel button,
+  .ip-file,
+  .ip-toggle,
+  .ip-tabs button,
+  .ip-field select,
+  .ip-field input[type='text'],
+  .ip-fields select,
+  .ip-fields input,
+  .ly-tools select,
+  .ip-section > summary,
+  .ip-color {
+    min-height: 44px;
+  }
+  .ly-panel button.ip-icon-btn,
+  .ip-inline > button,
+  .ip-stops > button {
+    min-width: 44px;
+  }
+  .ip-panel button,
+  .ly-panel button,
+  .ip-file,
+  .ip-tabs button,
+  .ip-layer-caption,
+  .ip-section > summary,
+  .ip-help,
+  .ly-info strong {
+    font-size: 14px;
+  }
+  .ip-tabs {
+    margin-bottom: 12px;
+  }
+  .ip-inline {
+    gap: 6px;
+  }
+  .ly-info small {
+    font-size: 12px;
+  }
+  .ly-select {
+    touch-action: pan-y;
+  }
+  .ip-panel .ip-section[data-current-category] {
+    padding-top: 10px;
+  }
+  .ip-section-body {
+    gap: 16px;
+  }
+  .ip-field,
+  .ip-numeric,
+  .ip-fields label,
+  .ip-vector legend {
+    font-size: 14px;
+  }
+  .ip-field select,
+  .ip-panel .ip-fields select,
+  .ip-panel .ip-fields input,
+  .ip-field input[type='text'],
+  .ip-field textarea,
+  .ip-number-box input,
+  .ip-category select,
+  .ly-tools select {
+    font-size: 16px;
+  }
+  .ip-stepper {
+    justify-self: end;
+    display: grid;
+    grid-template-columns: 44px minmax(4.1em, 7.5em) 44px;
+    align-items: center;
+    padding: 1px;
+    max-width: 100%;
+    border: 1px solid var(--panel-line);
+    border-radius: 7px;
+    background: #10161a;
+  }
+  .ip-panel .ip-stepper button.ip-step {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    font-size: 21px;
+    border: 0;
+    background: transparent;
+    color: var(--panel-accent);
+    touch-action: manipulation;
+  }
+  .ip-stepper .ip-number-box {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border: 0;
+    padding: 0 3px;
+  }
+  .ip-stepper .ip-number-box input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    text-align: center;
+  }
+  .ip-numeric {
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 1.5fr);
+    row-gap: 1px;
+  }
+  .ip-vector > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ip-vector .ip-numeric {
+    display: grid;
+  }
+  .ip-vector label {
+    font-size: 14px;
+  }
+  .ip-vector legend {
+    margin-bottom: 8px;
+  }
+  .ip-slider-area {
+    touch-action: pan-y;
+    position: relative;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .ip-panel .ip-slider {
+    pointer-events: none;
+    appearance: none;
+    height: 44px;
+    margin: 0;
+    background: transparent;
+    width: 100%;
+  }
+  .ip-slider::-webkit-slider-runnable-track {
+    height: 5px;
+    border-radius: 5px;
+    background: #495c56;
+  }
+  .ip-slider::-moz-range-track {
+    height: 5px;
+    border-radius: 5px;
+    background: #495c56;
+  }
+  .ip-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--panel-accent);
+    border: 3px solid #213a32;
+    box-shadow: 0 0 0 1px #739b88;
+    margin-top: -9.5px;
+  }
+  .ip-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--panel-accent);
+    border: 3px solid #213a32;
+  }
+  .ip-color {
+    position: relative;
+    min-width: 0;
+  }
+  .ip-color input {
+    width: 44px;
+    height: 34px;
+  }
+  .ip-color small {
+    font-size: 12px;
+  }
+  .ip-field label,
+  .ip-toggle,
+  .ip-tab button,
+  .ip-inline button {
+    touch-action: manipulation;
+  }
+  .ip-toggle input {
+    width: 20px;
+    height: 20px;
+  }
+  .ip-fields {
+    gap: 12px;
+  }
+  .ip-file,
+  .ip-action {
+    width: 100%;
+  }
+  .ip-section .ip-section {
+    padding: 0 5px;
+  }
+  .ly-tools > .ip-inline {
+    gap: 6px;
+  }
+  .ly-tools select {
+    width: auto;
+  }
+}
+
+@media (max-width: 340px) {
+  .ip-numeric,
+  .ip-fields label,
+  .ip-field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ip-stepper {
+    justify-self: stretch;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
 }

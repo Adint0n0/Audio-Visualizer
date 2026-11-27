@@ -1,10 +1,12 @@
 # Formant Studio
 
-Formant Studio は、ローカルの楽曲や動画に立体的なオーディオビジュアライザーを合成し、MP4 または WebM を生成するブラウザ編集ツールです。Three.js と WebGL 2 で描く 60 のシーンから始められます。音声解析、プロジェクト保存、動画エンコードは端末内で実行します。初回は同梱の楽曲「Phase Drift」とシーン「Prism Current」が開きます。
+Formant Studio は、ローカルの楽曲や動画に立体的なオーディオビジュアライザーを合成し、MP4 または WebM を生成するブラウザ編集ツールです。Three.js と WebGL 2 で描く18ファミリー・60プリセットから始められます。音声解析、プロジェクト保存、動画エンコードは端末内で実行します。初回は同梱の楽曲「Phase Drift」とシーン「Binary Stars」が開きます。
 
 [日本語ガイド](docs/GUIDE.ja.md) · [English guide](docs/GUIDE.en.md) · [テンプレート一覧](docs/TEMPLATES.md)
 
-![Formant Studio の編集画面。左にライブラリ、中央に3Dプレビュー、右にプロパティ、下に楽曲の波形](docs/studio.png)
+![Formant Studio の編集画面。左にライブラリ、中央に3Dプレビュー、右にプロパティ、下に楽曲の波形](docs/review/touch/after/1440x900.jpg)
+
+[改修前後の画面比較](docs/TOUCH-REVIEW.md) · [モバイル編集・ジェスチャー・スナップ](docs/TOUCH-EDITING.md) · [改修前調査](docs/REDESIGN-RESEARCH.md)
 
 ## 開発
 

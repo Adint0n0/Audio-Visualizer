@@ -19,12 +19,12 @@ import {
   ProjectHistory,
   removeLayers,
 } from '../src/model'
-import { categories, templates } from '../src/templates'
+import { categories, colorways, families, featuredIds, templates } from '../src/templates'
 import { loadProject, saveProject, loadPreset, savePreset } from '../src/storage'
 
 const frame = { rms: 0.25, bands: new Float32Array([0.1, 0.5]) }
 describe('scene persistence and validation', () => {
-  it('has five distinct compositions in every category, with full JSON round trips', () => {
+  it('has five editable presets in every category, with full JSON round trips', () => {
     expect(new Set(templates.map((t) => t.id)).size).toBe(60)
     for (const category of Object.keys(categories))
       expect(templates.filter((t) => t.category === category)).toHaveLength(5)
@@ -49,6 +49,47 @@ describe('scene persistence and validation', () => {
       expect(t.name.ja).toBeTruthy()
     }
     expect(structures.size).toBe(60)
+  })
+  it('groups each stable scene in one family, with independent, schema-valid colorways', () => {
+    const stableIds = templates.map((t) => t.id).sort()
+    expect(
+      Object.values(families)
+        .flatMap((f) => [...f.ids])
+        .sort(),
+    ).toEqual(stableIds)
+    expect(new Set(featuredIds).size).toBe(featuredIds.length)
+    expect(featuredIds.every((id) => stableIds.includes(id))).toBe(true)
+    expect(templates[0].id).toBe('binary-stars')
+    const geometry = (p: ReturnType<typeof createProject>) =>
+      p.layers.map((l) => [
+        l.style,
+        l.layout,
+        l.shape,
+        l.settings,
+        l.position,
+        l.rotation,
+        l.scale,
+        l.effects,
+        l.modulations,
+        l.motions,
+      ])
+    for (const t of templates) {
+      expect(t.description.en.length).toBeGreaterThan(20)
+      expect(t.description.ja.length).toBeGreaterThan(10)
+      expect(families[t.family].ids).toContain(t.id)
+      expect(t.colorways).toEqual(Object.keys(colorways))
+      const original = t.create()
+      expect(t.palette).toEqual(original.layers[0].material.stops.map((stop) => stop.color))
+      const recipes = new Set<string>()
+      for (const key of t.colorways) {
+        const scene = t.create(key)
+        expect(parseProject(JSON.parse(JSON.stringify(scene)))).toEqual(scene)
+        expect(scene.layers[0].id).not.toBe(original.layers[0].id)
+        expect(geometry(scene)).toEqual(geometry(original))
+        recipes.add(JSON.stringify(scene.layers.map((l) => l.material.stops)))
+      }
+      expect(recipes.size).toBe(t.colorways.length)
+    }
   })
   it('migrates version 1 and validates persisted output preferences and ranges', () => {
     const { output: _oldOutput, range: _oldRange, ...other } = createProject()

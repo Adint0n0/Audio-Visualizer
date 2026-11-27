@@ -39,7 +39,7 @@ import {
   saveProject,
   storageUsage,
 } from './storage'
-import { templates } from './templates'
+import { templates, type Colorway } from './templates'
 import { Dialog } from './studio/Dialog'
 import { Library, type SceneTemplate } from './studio/Library'
 import { Timeline } from './studio/Timeline'
@@ -75,7 +75,8 @@ export default function App() {
   const { project, media, edit, assets, setAssets, images, progress, history } = studio
   const [selection, select] = useState<string[]>(() => [project.layers[0]?.id].filter(Boolean))
   const [libraryTab, setLibraryTab] = useState<'library' | 'layers'>('library'),
-    [mobile, setMobile] = useState('stage'),
+    [mobile, setMobile] = useState<'stage' | 'library' | 'layers' | 'inspector'>('stage'),
+    [sheetTall, setSheetTall] = useState(false),
     [advanced, setAdvanced] = useState(false)
   const [activeTemplate, setActiveTemplate] = useState(templates[0].id),
     [transient, setTransient] = useState<Project | null>(null)
@@ -94,6 +95,36 @@ export default function App() {
     openInput = useRef<HTMLInputElement>(null),
     linkInput = useRef<HTMLInputElement>(null),
     video = useRef<HTMLVideoElement>(null)
+  const app = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const resize = () => {
+      if (!app.current) return
+      if (viewport.scale !== 1) {
+        app.current.style.removeProperty('--visible-height')
+        return
+      }
+      app.current.style.setProperty('--visible-height', Math.round(viewport.height) + 'px')
+      const keyboard = innerHeight - viewport.height > 100
+      app.current.classList.toggle('keyboard-inset', keyboard)
+      if (keyboard)
+        requestAnimationFrame(() => {
+          const input = document.activeElement
+          if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)) return
+          const scroll = input.closest<HTMLElement>('.dock-scroll, dialog, .export-modal')
+          if (!scroll) return
+          const area = scroll.getBoundingClientRect()
+          const control = input.getBoundingClientRect()
+          const bottom = Math.min(area.bottom, viewport.height + viewport.offsetTop) - 12
+          if (control.bottom > bottom) scroll.scrollTop += control.bottom - bottom
+          else if (control.top < area.top + 12) scroll.scrollTop -= area.top + 12 - control.top
+        })
+    }
+    resize()
+    viewport.addEventListener('resize', resize)
+    return () => viewport.removeEventListener('resize', resize)
+  }, [])
   const current = useRef(project)
   current.current = project
   const [dragRange, previewRange] = useState<[number, number] | null>(null)
@@ -245,8 +276,8 @@ export default function App() {
         ),
       )
   }
-  function apply(item: SceneTemplate, append: boolean) {
-    const scene = item.create()
+  function apply(item: SceneTemplate, append: boolean, colorway?: Colorway) {
+    const scene = item.create(colorway)
     if (append && project.layers.length + scene.layers.length > 128) {
       notify(t('A scene supports up to 128 layers.', 'レイヤーは128個まで追加できます。'))
       return
@@ -358,7 +389,10 @@ export default function App() {
   const missing = missingAssetIds(project, assets)
   return (
     <div
-      className={'app mobile-' + mobile}
+      ref={app}
+      className={
+        'app mobile-' + mobile + (mobile === 'stage' ? '' : ' sheet-open') + (sheetTall ? ' sheet-tall' : '')
+      }
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes('Files')) e.preventDefault()
       }}
@@ -381,7 +415,11 @@ export default function App() {
           </span>
         </div>
         <span className="brand-divider" />
-        <button className="project-menu" onClick={() => setFileDialog(true)}>
+        <button
+          className="project-menu"
+          aria-label={t('Project files', 'プロジェクト')}
+          onClick={() => setFileDialog(true)}
+        >
           <FolderOpen size={15} />
           <span>{project.name}</span>
           <ChevronDown size={12} />
@@ -412,7 +450,11 @@ export default function App() {
             <Globe2 size={15} />
             {ja ? 'JA' : 'EN'}
           </button>
-          <button className="btn import-btn" onClick={() => mediaInput.current?.click()}>
+          <button
+            className="btn import-btn"
+            aria-label={t('Import media', '素材を読み込む')}
+            onClick={() => mediaInput.current?.click()}
+          >
             <Upload size={15} />
             <span>{t('Import media', '素材を読み込む')}</span>
           </button>
@@ -437,20 +479,6 @@ export default function App() {
           </button>
         </div>
       </header>
-      <div className="mobile-tabs">
-        {(
-          [
-            ['library', LayoutGrid, t('Library', 'ライブラリ')],
-            ['stage', Box, t('Viewport', 'プレビュー')],
-            ['inspector', SlidersHorizontal, t('Inspector', 'プロパティ')],
-          ] as const
-        ).map(([id, Icon, name]) => (
-          <button key={id} className={mobile === id ? 'selected' : ''} onClick={() => setMobile(id)}>
-            <Icon size={15} />
-            {name}
-          </button>
-        ))}
-      </div>
       <main className="editor">
         <aside className="left-dock">
           <nav className="dock-tabs">
@@ -469,7 +497,22 @@ export default function App() {
               {t('Layers', 'レイヤー')}
             </button>
           </nav>
-          <div className="dock-scroll">{libraryTab === 'library' ? library : <Layers {...panel} />}</div>
+          <div className="sheet-heading">
+            <button className="sheet-size" onClick={() => setSheetTall(!sheetTall)} aria-expanded={sheetTall}>
+              <ChevronDown size={17} />
+              {sheetTall ? t('Shorter panel', 'パネルを縮める') : t('More room', 'パネルを広げる')}
+            </button>
+            <button
+              className="icon-btn"
+              aria-label={t('Close panel', 'パネルを閉じる')}
+              onClick={() => setMobile('stage')}
+            >
+              <X size={19} />
+            </button>
+          </div>
+          <div className="dock-scroll" key={libraryTab}>
+            {libraryTab === 'library' ? library : <Layers {...panel} />}
+          </div>
         </aside>
         <Viewport
           project={display}
@@ -483,9 +526,17 @@ export default function App() {
           edit={setProject}
           notify={notify}
           pauseRender={exporting}
+          undo={studio.undo}
+          redo={studio.redo}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
         />
         <aside className="right-dock">
           <div className="inspector-top">
+            <button className="sheet-size" onClick={() => setSheetTall(!sheetTall)} aria-expanded={sheetTall}>
+              <ChevronDown size={16} />
+              <span>{sheetTall ? t('Shorter', '縮小') : t('Expand', '拡張')}</span>
+            </button>
             <h2>
               <SlidersHorizontal size={16} />
               {t('Inspector', 'プロパティ')}
@@ -497,6 +548,13 @@ export default function App() {
             >
               <span className="mini-switch" />
               {t('Advanced', '詳細')}
+            </button>
+            <button
+              className="icon-btn sheet-close"
+              aria-label={t('Close panel', 'パネルを閉じる')}
+              onClick={() => setMobile('stage')}
+            >
+              <X size={18} />
             </button>
           </div>
           <div className="dock-scroll">{inspector}</div>
@@ -521,6 +579,29 @@ export default function App() {
         setMute={setMute}
         importFile={() => mediaInput.current?.click()}
       />
+      <nav className="mobile-tabs" aria-label={t('Editor panels', '編集パネル')}>
+        {(
+          [
+            ['library', LayoutGrid, t('Scenes', 'シーン')],
+            ['layers', LayersIcon, t('Layers', 'レイヤー')],
+            ['inspector', SlidersHorizontal, t('Edit', '編集')],
+            ['stage', Box, t('Preview', 'プレビュー')],
+          ] as const
+        ).map(([id, Icon, label]) => (
+          <button
+            key={id}
+            data-sheet={id}
+            aria-pressed={mobile === id}
+            onClick={() => {
+              if (id === 'library' || id === 'layers') setLibraryTab(id)
+              setMobile(mobile === id ? 'stage' : id)
+            }}
+          >
+            <Icon size={17} />
+            {label}
+          </button>
+        ))}
+      </nav>
       <footer className="statusbar">
         <span>
           <i className="local-light" />
@@ -656,6 +737,16 @@ export default function App() {
               </button>
             )}
           </div>
+          <button
+            className="btn project-guide"
+            onClick={() => {
+              setFileDialog(false)
+              setHelp(true)
+            }}
+          >
+            <CircleHelp size={16} />
+            {t('Studio guide', '使い方')}
+          </button>
           <p className="storage-info">
             <HardDrive size={14} />
             {t('Browser storage', 'ブラウザの保存領域')} · {((quota.usage || 0) / 1048576).toFixed(1)} MiB
@@ -689,12 +780,12 @@ export default function App() {
                 'ライブラリでプレビューし、シーンを置換するかレイヤーを追加します。',
               ),
               t(
-                'Open Layers to select objects. Edit their appearance in the Inspector. Advanced reveals motion, sound analysis and scene settings.',
-                'レイヤーで対象を選び、プロパティで外観を編集します。詳細でモーションや音声解析を調整できます。',
+                'Tap a layer, then drag to move it. Use two fingers to resize or twist. Open Edit to change color and sound response.',
+                'レイヤーをタップしてドラッグで移動し、2本指で拡縮や回転ができます。「編集」から色や音への反応を変更できます。',
               ),
               t(
-                'Use Space to play. Set the Range in the timeline, then Export to test codecs and render your file.',
-                'Space で再生できます。タイムラインで範囲を選び、書き出しでコーデックを確認して動画を生成します。',
+                'Play to check the motion. Set Range in the timeline, then open Export and choose a video format.',
+                '再生して動きを確認します。タイムラインで範囲を選び、書き出し画面で動画の形式を指定します。',
               ),
               t(
                 'Save a portable project from the project menu. Ctrl/Cmd+S saves it, and Ctrl/Cmd+Z undoes an edit.',

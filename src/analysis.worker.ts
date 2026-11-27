@@ -14,7 +14,8 @@ async function analyze(job: AnalysisJob) {
   const input = new Input({ source: new BlobSource(job.file), formats: localFormats })
   try {
     const track = (await input.getAudioTracks()).find((t) => t.id === job.trackId) as
-      InputAudioTrack | undefined
+      | InputAudioTrack
+      | undefined
     if (!track) throw Error('Audio track missing / 音声トラックが見つかりません')
     const rate = await track.getSampleRate()
     const builder = new FeatureBuilder(rate, job.duration, job.settings)
@@ -55,6 +56,7 @@ async function analyze(job: AnalysisJob) {
       { data },
       {
         transfer: [
+          data.music.buffer,
           data.bands.buffer,
           data.metrics.buffer,
           data.waves.buffer,

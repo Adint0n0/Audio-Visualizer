@@ -10,6 +10,7 @@ import { servePages } from './serve-pages.mjs'
 const scene4k = process.argv.includes('--scene-4k')
 const dimensions = scene4k ? [3840, 2160] : [320, 180]
 const duration = scene4k ? 0.25 : 0.5
+const renderTimeout = scene4k ? 360000 : 90000
 const server = await servePages(0)
 const base = 'http://127.0.0.1:' + server.address().port
 const artifacts = await mkdtemp(join(tmpdir(), 'formant-offline-'))
@@ -84,8 +85,8 @@ try {
     const started = Date.now()
     await render.click({ timeout: 90000 })
     const [download] = await Promise.all([
-      page.waitForEvent('download', { timeout: 90000 }),
-      dialog.getByRole('link', { name: 'Download video' }).click({ timeout: 90000 }),
+      page.waitForEvent('download', { timeout: renderTimeout }),
+      dialog.getByRole('link', { name: 'Download video' }).click({ timeout: renderTimeout }),
     ])
     const name = join(artifacts, format + '.' + format)
     await download.saveAs(name)

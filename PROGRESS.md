@@ -40,3 +40,15 @@
 実装コミット `a708a4d` を `feat/local-visualizer-studio` に push し、GitHub のリモート参照を照合しました。型チェック・lint・単体テスト 32 件、11 本のブラウザ検査を含む `npm run test:e2e` が成功しました。このコミットを別ディレクトリへ展開し、ロックファイルからの `npm ci`、本番ビルド、`npm run test:stress` も再実行しました。
 
 PR 作成時に、クラウド環境の許可リストにない `api.github.com/graphql` への要求が Forbidden で拒否されました。再開時は既存 PR の有無を確認し、作業ブランチから `main` への PR を作成してください。公開状態は連携済み Cloudflare Pages のデプロイ結果で確認します。[GitHub の PR 作成画面](https://github.com/Adint0n0/Audio-Visualizer/pull/new/feat/local-visualizer-studio)
+
+## モバイル・ビジュアル改修
+
+基準は PR #1 を含む `main` の `7906b2b`。改修用ブランチは `feat/touch-visual-overhaul`。参考画像4点と公開資料の確認・アクセス制限は [調査記録](docs/REDESIGN-RESEARCH.md) に記載した。
+
+旧版の設定スクロール停止をタッチ入力で再現した。設定パネルをプレビューと共存させ、パネル内の縦スクロールを1つのコンテナで管理した。実装レビューで長押しの指を離すとメニュー内の項目まで作動する問題を検出し、保持中は視覚表示、指を離した後にメニューを開く方式に変更した。ピンチ中に指が増減した場合の基準再計算、キャンセル時の復元、ビューと出力カメラの分離を検査した。[操作仕様](docs/TOUCH-EDITING.md)
+
+16描画スタイルのうち銀河、複合円形、LEDドット、発光球を音域別に動くGPU描画として新設した。60の編集可能なシーンは目視で類似性を確認し、18ファミリーに分類した。保存済みプロジェクトは既存スタイルと設定を保持する。新しい解析特徴はプレビューと出力の両方で素材の同じ時刻を参照する。[テンプレート一覧](docs/TEMPLATES.md) · [解析・拍推定の条件](docs/AUDIO-ANALYSIS.md)
+
+画面やジェスチャーの再現には `npm run build` と `node scripts/check-touch.mjs` を実行する。音による画素変化と GPU 形状の再現性は `node scripts/check-music-response.mjs` と `node scripts/check-instruments.mjs` で確認できる。通しの検査は `npm run test:e2e` を使用する。
+
+Android 11 の実機、iOS Safari、実端末のソフトウェアキーボード表示と実端末での振動、人を対象とした評価は未検証。ソフトウェア GPU の測定は負荷傾向の確認に用いた。公開 Pages URL は環境のネットワーク制限で直接接続できないため、同じヘッダーのローカル配信を検証した。

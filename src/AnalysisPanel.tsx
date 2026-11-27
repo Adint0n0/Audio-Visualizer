@@ -1,3 +1,4 @@
+import { Numeric, Section } from './InspectorFields'
 import { useEffect, useState } from 'react'
 import {
   analysisChoices,
@@ -77,8 +78,7 @@ export function AnalysisPanel({
   const t = (ja: string, en: string) => (lang === 'ja' ? ja : en)
   const label = (k: keyof AnalysisSettings) => labels[k][lang === 'ja' ? 0 : 1]
   return (
-    <details className="ip-section">
-      <summary>{t('音声解析', 'Audio analysis')}</summary>
+    <Section category="analysis" title={t('音声解析', 'Audio analysis')}>
       <fieldset disabled={busy} className="ip-fields">
         <label>
           {label('fftSize')}{' '}
@@ -103,17 +103,15 @@ export function AnalysisPanel({
         {(Object.keys(analysisRanges) as (keyof typeof analysisRanges)[]).map((k) => {
           const [min, max, step] = analysisRanges[k]
           return (
-            <label key={k}>
-              {label(k)}{' '}
-              <input
-                type="number"
-                min={min}
-                max={max}
-                step={step}
-                value={Number.isNaN(draft[k]) ? '' : draft[k]}
-                onChange={(e) => setDraft({ ...draft, [k]: e.target.valueAsNumber })}
-              />
-            </label>
+            <Numeric
+              key={k}
+              label={label(k)}
+              min={min}
+              max={max}
+              step={step}
+              value={draft[k]}
+              onChange={(value) => setDraft((current) => ({ ...current, [k]: value }))}
+            />
           )
         })}
         <button
@@ -148,6 +146,6 @@ export function AnalysisPanel({
           </p>
         )}
       </fieldset>
-    </details>
+    </Section>
   )
 }

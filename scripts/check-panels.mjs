@@ -1,23 +1,18 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import { chromium } from '@playwright/test'
-import { createServer } from 'vite'
+import { servePages } from './serve-pages.mjs'
 
-// Drive the real studio through its public controls so history, selection and scene updates
-// are verified together. The development server also allows running this check before build.
-const server = await createServer({
-  logLevel: 'error',
-  server: { host: '127.0.0.1', port: 0 },
-})
+// Exercise the same static bundle and HTTP headers that the deployment serves.
+const server = await servePages(0, process.env.FORMANT_TEST_DIST ?? 'dist')
 let browser
 try {
-  await server.listen()
   browser = await chromium.launch({
     executablePath:
       process.env.CHROMIUM_PATH || (existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined),
     args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
   })
-  const url = 'http://127.0.0.1:' + server.httpServer.address().port
+  const url = 'http://127.0.0.1:' + server.address().port
   const page = await browser.newPage({
     viewport: { width: 1400, height: 920 },
     locale: 'en-US',
@@ -128,18 +123,97 @@ try {
   })
   const phone = await touch.newPage()
   await phone.goto(url)
-  await phone.locator('.mobile-tabs').getByRole('button', { name: 'プロパティ' }).tap()
-  await phone.getByRole('button', { name: 'シーン', exact: true }).tap()
+  await phone.locator('button[data-sheet="inspector"]').tap()
+  const mobilePanel = phone.locator('.ip-panel')
+  const category = mobilePanel.getByRole('combobox', { name: '設定カテゴリー' })
+  await phone.getByRole('button', { name: '詳細', exact: true }).tap()
+  await category.selectOption('appearance')
+  const opacity = mobilePanel.getByRole('spinbutton', { name: '不透明度', exact: true })
+  const down = mobilePanel.getByRole('button', { name: /不透明度.*減らす/ })
+  const before = Number(await opacity.inputValue())
+  await down.tap()
+  assert.equal(Number(await opacity.inputValue()), Number((before - 0.01).toFixed(2)))
+  const controlBox = await down.boundingBox()
+  assert(controlBox && controlBox.width >= 44 && controlBox.height >= 44)
+  const control = mobilePanel.getByRole('slider', { name: '不透明度', exact: true })
+  const area = control.locator('..')
+  const scroll = phone.locator('.right-dock .dock-scroll')
+  await area.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  let hit = await area.boundingBox()
+  assert(hit && hit.height >= 44)
+  const touchSource = await touch.newCDPSession(phone)
+  const gesture = async (x, y, dx, dy, cancel = false) => {
+    const event = (type, touchPoints) => touchSource.send('Input.dispatchTouchEvent', { type, touchPoints })
+    await event('touchStart', [{ x, y }])
+    for (let i = 1; i <= 7; i++) await event('touchMove', [{ x: x + (dx * i) / 7, y: y + (dy * i) / 7 }])
+    await event(cancel ? 'touchCancel' : 'touchEnd', [])
+  }
+  const scrolled = await scroll.evaluate((el) => el.scrollTop)
+  const originalOpacity = await opacity.inputValue()
+  await gesture(hit.x + hit.width * 0.5, hit.y + hit.height / 2, 2, -90)
+  await phone.waitForFunction(
+    (previous) => document.querySelector('.right-dock .dock-scroll').scrollTop > previous + 12,
+    scrolled,
+  )
+  assert.equal(await opacity.inputValue(), originalOpacity, 'Vertical swipe edits no value')
+  await area.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+  hit = await area.boundingBox()
+  await gesture(hit.x + hit.width * 0.25, hit.y + hit.height / 2, hit.width * 0.48, 0)
+  const finalOpacity = Number(await opacity.inputValue())
+  assert(finalOpacity > 0.65 && finalOpacity < 0.85)
+  await gesture(hit.x + hit.width * 0.25, hit.y + hit.height / 2, hit.width * 0.2, 0, true)
+  assert.equal(Number(await opacity.inputValue()), finalOpacity, 'Cancel must discard the touch preview')
+  await category.selectOption('transform')
+  assert.equal(await mobilePanel.getByRole('slider', { name: '不透明度', exact: true }).count(), 0)
+  assert.equal(
+    await mobilePanel.getByRole('spinbutton', { name: 'X', exact: true }).first().isVisible(),
+    true,
+  )
+  await mobilePanel.getByRole('button', { name: 'シーン', exact: true }).tap()
   const width = await phone.evaluate(() => ({
     doc: document.documentElement.scrollWidth,
     viewport: innerWidth,
   }))
   assert(width.doc <= width.viewport, `Unexpected horizontal overflow: ${JSON.stringify(width)}`)
   assert.equal(await phone.getByLabel('背景色').isVisible(), true)
+  await category.selectOption('analysis')
+  const applyAnalysis = phone.getByRole('button', { name: '解析設定を適用', exact: true })
+  await applyAnalysis.scrollIntoViewIfNeeded()
+  const depth = await applyAnalysis.evaluate((el) => {
+    const ancestors = []
+    for (let p = el.parentElement; p; p = p.parentElement) {
+      if (/auto|scroll/.test(getComputedStyle(p).overflowY) && p.scrollHeight > p.clientHeight)
+        ancestors.push(p.className)
+    }
+    return ancestors
+  })
+  assert.deepEqual(depth, ['dock-scroll'], 'One vertical scroll owner for long analysis panel')
+  await phone.setViewportSize({ width: 844, height: 390 })
+  await category.selectOption('camera')
+  const near = mobilePanel.getByRole('spinbutton', { name: '近クリップ', exact: true })
+  await near.scrollIntoViewIfNeeded()
+  assert.equal(await near.isVisible(), true)
+  const horizontal = await scroll.evaluate((el) => el.scrollWidth - el.clientWidth)
+  assert(horizontal <= 1, `Landscape camera overflows by ${horizontal}px`)
+  await phone.locator('button[data-sheet="layers"]').tap()
+  const layers = phone.locator('.ly-panel')
+  await layers.getByRole('button', { name: 'レイヤーを追加', exact: true }).tap()
+  await layers.getByRole('button', { name: 'グループ', exact: true }).tap()
+  await layers.getByRole('button', { name: 'レイヤー操作', exact: true }).tap()
+  const duplicate = layers.getByRole('button', { name: '複製', exact: true })
+  for (let i = 0; i < 8; i++) await duplicate.tap()
+  const lastLayer = layers.locator('.ly-select').last()
+  await lastLayer.scrollIntoViewIfNeeded()
+  assert.equal(await lastLayer.isVisible(), true)
+  assert.equal(await layers.locator('.ly-list').evaluate((el) => getComputedStyle(el).overflowY), 'visible')
+  assert(
+    await phone.locator('.left-dock .dock-scroll').evaluate((el) => el.scrollTop > 30),
+    'Long layer list scrolls in the sheet',
+  )
   console.log(
-    'PASS: edits, one-step slider undo, duplicate/delete, path editing, modulation, all 12 style selectors, layer gradient/effects preset round trip, camera, language switch, mobile touch and overflow',
+    'PASS: edits, one-step slider undo, duplicate/delete, path editing, modulation, all registered style selectors, layer gradient/effects preset round trip, camera, language switch, touch category picker, steppers, native vertical scroll, horizontal drag, touch cancellation and overflow',
   )
 } finally {
   await browser?.close()
-  await server.close()
+  await new Promise((resolve) => server.close(resolve))
 }

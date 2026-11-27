@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Music2, Trash2, Upload, Waypoints, ChevronUp, ChevronDown } from 'lucide-react'
 import { defaultModulation, defaultMotion, numericBounds } from './model'
 import type { AudioFrame } from './analysis'
 import type { Layer, Modulation, Motion, Project, Target, Vec3 } from './model'
-import { Choice, Numeric, Section, Toggle, translator } from './InspectorFields'
+import { Choice, Numeric, Section, Toggle, translator, PanelContext } from './InspectorFields'
 import type { Language, NumericProps } from './InspectorFields'
 import { term } from './panelLanguage'
 
@@ -149,7 +149,11 @@ export function BindingEditor({
   const t = translator(lang)
   const fmt = (v: string) => term(lang, v)
   const [showMeters, setShowMeters] = useState(false)
-  const frame = showMeters && data.modulations.length ? getAudioFrame?.() : undefined
+  const { category } = useContext(PanelContext)
+  const frame =
+    (!category || category === 'audio') && showMeters && data.modulations.length
+      ? getAudioFrame?.()
+      : undefined
   const updateMod = (index: number, delta: Partial<Modulation>) =>
     onChange({
       modulations: data.modulations.map((m, i) => (i === index ? { ...m, ...delta } : m)),
@@ -166,11 +170,7 @@ export function BindingEditor({
   }
   const controls = (index: number, length: number, move: (step: number) => void, remove: () => void) => (
     <div className="ip-inline ip-end">
-      <button
-        aria-label={t('Evaluate earlier', '評価順を上げる')}
-        disabled={!index}
-        onClick={() => move(-1)}
-      >
+      <button aria-label={t('Evaluate earlier', '評価順を上げる')} disabled={!index} onClick={() => move(-1)}>
         <ChevronUp size={14} />
       </button>
       <button
@@ -188,6 +188,7 @@ export function BindingEditor({
   return (
     <>
       <Section
+        category="audio"
         onToggle={setShowMeters}
         title={t('Audio mappings', '音声による変調') + ' (' + data.modulations.length + ')'}
       >
@@ -306,7 +307,7 @@ export function BindingEditor({
           {t('Add audio mapping', '音声変調を追加')}
         </button>
       </Section>
-      <Section title={t('Motion', '自動アニメーション') + ' (' + data.motions.length + ')'}>
+      <Section category="motion" title={t('Motion', '自動アニメーション') + ' (' + data.motions.length + ')'}>
         {data.motions.map((m, i) => (
           <div className="ip-binding" key={i}>
             <Toggle

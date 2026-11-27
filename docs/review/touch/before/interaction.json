@@ -1,0 +1,129 @@
+{
+  "browser": "156.0.8078.79",
+  "stage": {
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      8,
+      178,
+      366,
+      206
+    ],
+    "scrollAreas": []
+  },
+  "inspector": {
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          -8,
+          141,
+          382,
+          379
+        ],
+        "offset": 0,
+        "max": 1361
+      }
+    ]
+  },
+  "afterSwipe": {
+    "viewport": [
+      360,
+      640
+    ],
+    "pageWidth": 360,
+    "documentScroll": 0,
+    "canvas": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "scrollAreas": [
+      {
+        "className": "dock-scroll",
+        "rect": [
+          -8,
+          141,
+          382,
+          379
+        ],
+        "offset": 0,
+        "max": 1361
+      }
+    ]
+  },
+  "scrolls": [
+    {
+      "className": "app mobile-inspector",
+      "y": 0
+    }
+  ],
+  "sameAfterPinch": true,
+  "pinchEvents": [
+    {
+      "type": "pointerdown",
+      "id": 6,
+      "trusted": true,
+      "x": 164.6085968017578,
+      "y": 280.90625,
+      "target": "CANVAS"
+    },
+    {
+      "type": "pointerdown",
+      "id": 7,
+      "trusted": true,
+      "x": 189.6085968017578,
+      "y": 280.90625,
+      "target": "CANVAS"
+    },
+    {
+      "type": "pointerup",
+      "id": 6,
+      "trusted": true,
+      "x": 152.6085968017578,
+      "y": 283.90625,
+      "target": "CANVAS"
+    },
+    {
+      "type": "lostpointercapture",
+      "id": 6,
+      "trusted": true,
+      "x": 152.6085968017578,
+      "y": 283.90625,
+      "target": "CANVAS"
+    },
+    {
+      "type": "pointerup",
+      "id": 7,
+      "trusted": true,
+      "x": 214.6085968017578,
+      "y": 273.90625,
+      "target": "CANVAS"
+    },
+    {
+      "type": "lostpointercapture",
+      "id": 7,
+      "trusted": true,
+      "x": 214.6085968017578,
+      "y": 273.90625,
+      "target": "CANVAS"
+    }
+  ]
+}
