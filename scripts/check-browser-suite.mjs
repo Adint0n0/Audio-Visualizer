@@ -13,6 +13,7 @@ const checks = [
   'check-offline',
   'check-offline-update',
   'check-export-dialog',
+  'check-export-aspect',
   'check-composite',
 ]
 for (const name of checks) {

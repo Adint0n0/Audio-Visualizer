@@ -1,6 +1,8 @@
 import { MAX_MEDIA_SECONDS } from '../analysis'
 
 export type Container = 'mp4' | 'webm'
+const MAX_SIDE = 4096
+const MAX_PIXELS = 8847360
 
 export interface ExportOptions {
   container: Container
@@ -20,6 +22,17 @@ export function frameCount(options: Pick<ExportOptions, 'start' | 'end' | 'fps'>
   return Math.ceil((options.end - options.start) * options.fps - 1e-9)
 }
 
+export function sizeForAspect(shortEdge: number, aspectWidth: number, aspectHeight: number) {
+  // Presets use reduced ratios. An even multiplier preserves that ratio and H.264 alignment.
+  const limit = Math.min(
+    shortEdge / Math.min(aspectWidth, aspectHeight),
+    MAX_SIDE / Math.max(aspectWidth, aspectHeight),
+    Math.sqrt(MAX_PIXELS / (aspectWidth * aspectHeight)),
+  )
+  const multiplier = 2 * Math.max(1, Math.floor(limit / 2))
+  return { width: aspectWidth * multiplier, height: aspectHeight * multiplier }
+}
+
 export function validateExport(o: ExportOptions) {
   if (
     !['mp4', 'webm'].includes(o.container) ||
@@ -28,8 +41,8 @@ export function validateExport(o: ExportOptions) {
   )
     throw new Error('Invalid codec/container / 形式とコーデックの組み合わせが無効です')
   if (
-    ![o.width, o.height].every((n) => Number.isInteger(n) && n >= 2 && n <= 4096) ||
-    o.width * o.height > 8847360
+    ![o.width, o.height].every((n) => Number.isInteger(n) && n >= 2 && n <= MAX_SIDE) ||
+    o.width * o.height > MAX_PIXELS
   )
     throw new Error('Maximum 4096 px per side and 8,847,360 pixels / 最大辺4096・8847360画素まで')
   if (o.videoCodec === 'avc' && (o.width % 2 || o.height % 2))

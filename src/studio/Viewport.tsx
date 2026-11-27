@@ -29,6 +29,15 @@ import { useGestures } from './useGestures'
 import { clampTransform, initialSnap, type Transform, type Mode } from './transform'
 import { Precision, SnapSettings } from './Precision'
 import { Dialog } from './Dialog'
+import { sizeForAspect } from '../output/timing'
+
+const ASPECT_PRESETS = [
+  [16, 9],
+  [1, 1],
+  [9, 16],
+  [4, 3],
+] as const
+
 type Tool = 'select' | 'translate' | 'rotate' | 'scale'
 type Props = {
   project: Project
@@ -50,11 +59,13 @@ type Props = {
 export function Viewport(props: Props) {
   const { lang, project, media, selection } = props,
     ja = lang === 'ja'
+  const { width: outputWidth, height: outputHeight } = project.output
+  const aspectPreset = ASPECT_PRESETS.find(([w, h]) => w * outputHeight === h * outputWidth)
+  const selectedAspect = aspectPreset?.join(' / ') ?? 'custom'
   const root = useRef<HTMLDivElement>(null),
     canvas = useRef<HTMLCanvasElement>(null),
     renderer = useRef<SceneRenderer | null>(null)
   const [tool, setTool] = useState<Tool>('select'),
-    [ratio, setRatio] = useState('16 / 9'),
     [options, setOptions] = useState(false),
     [quality, setQuality] = useState(1),
     [fps, setFps] = useState(30),
@@ -228,8 +239,6 @@ export function Viewport(props: Props) {
     let autoScale = 1,
       slow = 0,
       fast = 0
-    let oldWidth = 0,
-      oldHeight = 0
     const paint = (now: number) => {
       if (!alive) return
       id = requestAnimationFrame(paint)
@@ -247,11 +256,8 @@ export function Viewport(props: Props) {
         height = Math.max(1, Math.round(el.clientHeight * factor))
       if (!el.clientWidth) return
       try {
-        if (oldWidth !== width || oldHeight !== height) {
-          r.resize(width, height)
-          oldWidth = width
-          oldHeight = height
-        }
+        const output = current.project.output
+        r.resize(width, height, output.width / output.height)
         const p = config.draft
           ? {
               ...current.project,
@@ -417,15 +423,26 @@ export function Viewport(props: Props) {
           <label className="ratio-select">
             <Monitor size={13} />
             <select
-              value={ratio}
-              onChange={(e) => setRatio(e.target.value)}
+              value={selectedAspect}
+              onChange={(e) => {
+                const preset = ASPECT_PRESETS.find((pair) => pair.join(' / ') === e.target.value)
+                if (!preset) return
+                const [w, h] = preset
+                const size = sizeForAspect(Math.min(outputWidth, outputHeight), w, h)
+                props.edit({ ...project, output: { ...project.output, ...size } })
+              }}
               aria-label={ja ? '画面比率' : 'Preview aspect ratio'}
             >
-              {['16 / 9', '1 / 1', '9 / 16', '4 / 3'].map((v) => (
-                <option key={v} value={v}>
-                  {v.replace(' / ', ':')}
+              {ASPECT_PRESETS.map(([w, h]) => (
+                <option key={`${w}:${h}`} value={`${w} / ${h}`}>
+                  {w}:{h}
                 </option>
               ))}
+              {!aspectPreset && (
+                <option value="custom">
+                  {t('Custom', 'カスタム')} ({outputWidth} × {outputHeight})
+                </option>
+              )}
             </select>
             <ChevronDown size={11} />
           </label>
@@ -439,7 +456,10 @@ export function Viewport(props: Props) {
         </div>
       </header>
       <div className="stage-space">
-        <div className="stage-frame" style={{ '--ratio': ratio } as React.CSSProperties}>
+        <div
+          className="stage-frame"
+          style={{ '--ratio': `${outputWidth} / ${outputHeight}` } as React.CSSProperties}
+        >
           <canvas
             ref={canvas}
             {...(tool === 'select' ? flat : {})}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { frameCount, validateExport, type ExportOptions } from '../src/output/timing'
+import { frameCount, sizeForAspect, validateExport, type ExportOptions } from '../src/output/timing'
 
 const options: ExportOptions = {
   container: 'mp4',
@@ -38,6 +38,23 @@ describe('export timeline', () => {
       { container: 'webm' },
     ]) {
       expect(() => validateExport({ ...options, ...change } as ExportOptions)).toThrow()
+    }
+  })
+})
+
+describe('editor aspect presets', () => {
+  it('keeps the short edge when switching between common ratios', () => {
+    expect(sizeForAspect(1080, 1, 1)).toEqual({ width: 1080, height: 1080 })
+    expect(sizeForAspect(1080, 9, 16)).toEqual({ width: 1080, height: 1920 })
+    expect(sizeForAspect(1080, 16, 9)).toEqual({ width: 1920, height: 1080 })
+    expect(sizeForAspect(1080, 4, 3)).toEqual({ width: 1440, height: 1080 })
+  })
+
+  it('keeps the exact ratio and valid H.264 dimensions near the output limits', () => {
+    for (const shortEdge of [2, 311, 2160, 2900]) {
+      const size = sizeForAspect(shortEdge, 16, 9)
+      expect(size.width * 9).toBe(size.height * 16)
+      expect(() => validateExport({ ...options, ...size })).not.toThrow()
     }
   })
 })

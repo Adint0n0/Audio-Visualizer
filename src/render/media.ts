@@ -103,8 +103,7 @@ export class Backdrop {
     renderer: T.WebGLRenderer,
     camera: T.Camera,
     b: Background,
-    w: number,
-    h: number,
+    aspect: number,
     source?: CanvasImageSource | null,
   ) {
     const u = this.mat.uniforms
@@ -114,7 +113,7 @@ export class Backdrop {
     if (!tex || !source) return
     const [iw, ih] = dimensions(source)
     if (iw <= 0 || ih <= 0) return
-    const ratio = w / h / (iw / ih)
+    const ratio = aspect / (iw / ih)
     let sx = 1,
       sy = 1
     if (b.fit === 'cover') {
@@ -128,7 +127,7 @@ export class Backdrop {
     u.picture.value = tex
     u.videoDecode.value = tex instanceof T.VideoTexture
     u.scale.value.set(sx / b.zoom, sy / b.zoom)
-    u.viewRatio.value = w / h
+    u.viewRatio.value = aspect
     u.offset.value.set(b.x / 100, b.y / 100)
     u.angle.value = T.MathUtils.degToRad(b.rotation)
     u.grade.value.set(b.brightness, b.contrast, b.saturation, T.MathUtils.degToRad(b.hue))

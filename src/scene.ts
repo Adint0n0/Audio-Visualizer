@@ -82,6 +82,7 @@ export class SceneRenderer {
   readonly canvas: HTMLCanvasElement
   private width = 1
   private height = 1
+  private aspect = 1
   private readonly world = new T.Scene()
   private readonly overlay = new T.Scene()
   private readonly bg = new Backdrop()
@@ -137,10 +138,12 @@ export class SceneRenderer {
     canvas.addEventListener('webglcontextlost', this.lose)
     canvas.addEventListener('webglcontextrestored', this.restore)
   }
-  resize(width: number, height: number) {
+  resize(width: number, height: number, aspect?: number) {
     const w = Math.round(width),
       h = Math.round(height)
     if (w < 1 || h < 1 || !Number.isFinite(w * h)) throw Error('Invalid render size')
+    // Keep the composition stable when the preview buffer is rounded or downscaled.
+    this.aspect = aspect ?? w / h
     if (this.width !== w || this.height !== h) {
       this.renderer.setSize(w, h, false)
       this.width = w
@@ -404,7 +407,7 @@ export class SceneRenderer {
       : (o[f].toArray() as Vec3)
   }
   private configureCamera(c: Camera) {
-    const a = this.width / this.height,
+    const a = this.aspect,
       portrait = Math.min(1, a)
     const camera = c.projection === 'perspective' ? this.perspective : this.ortho
     if (camera instanceof T.PerspectiveCamera) {
@@ -617,8 +620,7 @@ export class SceneRenderer {
             this.renderer,
             this.camera,
             p.background,
-            this.width,
-            this.height,
+            this.aspect,
             assets.background ?? (p.background.imageId ? assets.images?.get(p.background.imageId) : null),
           )
         else {
